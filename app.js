@@ -202,7 +202,7 @@ function appendSimMessage(msg) {
 // MAIN APP ROUTING & ROLE SWITCHER
 // ==========================================================================
 
-function setRole(role) {
+function setRole(role, options = {}) {
   currentRole = role;
   
   // Update Simulator Nav Buttons
@@ -224,6 +224,25 @@ function setRole(role) {
   } else if (role === "seeker") {
     document.getElementById("view-seeker").classList.add("active");
     renderSeekerBounties();
+    
+    // Auto-select and open the previously active bounty if any
+    const savedBountyId = localStorage.getItem("tab_selected_bounty_id");
+    if (savedBountyId) {
+      const db = getDB();
+      const exists = db.some(b => b.id === savedBountyId);
+      if (exists) {
+        selectedBountyId = savedBountyId;
+        openSeekerChat(savedBountyId);
+      }
+    }
+
+    // Force map resize and auto-pin to current location if allowed
+    if (window.google && googleMap) {
+      google.maps.event.trigger(googleMap, 'resize');
+    }
+    if (options.pinCurrentLocation !== false) {
+      pinMapToCurrentLocation();
+    }
   } else if (role === "dude") {
     document.getElementById("view-dude").classList.add("active");
     renderDudeBoard();
@@ -233,6 +252,12 @@ function setRole(role) {
   }
 
   showToast(`Switched view to ${role.toUpperCase()} mode`);
+  localStorage.setItem("tab_current_role", role);
+
+  // Update URL Hash to keep page refresh routing
+  if (window.location.hash !== `#${role}`) {
+    window.location.hash = role;
+  }
 }
 
 function showToast(message) {
@@ -419,6 +444,9 @@ function openSeekerChat(bountyId) {
   const bounty = db.find(b => b.id === bountyId);
   if (!bounty) return;
 
+  // Persist selected bounty on refresh
+  localStorage.setItem("tab_selected_bounty_id", bountyId);
+
   hub.style.display = "flex";
 
   const mainConsole = document.querySelector("#view-seeker .dashboard-main");
@@ -601,6 +629,11 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
 
   showToast(`Bounty ${newBounty.id} posted. ₹499 locked in Escrow.`);
   
+  // Set active selection to newly posted bounty and open chat
+  selectedBountyId = newBounty.id;
+  localStorage.setItem("tab_selected_bounty_id", newBounty.id);
+  openSeekerChat(newBounty.id);
+
   // Clear Form
   document.getElementById("post-bounty-form").reset();
   document.getElementById("bounty-lat").value = "12.9716";
@@ -1037,12 +1070,74 @@ window.addEventListener("DOMContentLoaded", () => {
   // Load simulator chat
   runChatSimulation();
 
-  // Set default view
-  setRole("visitor");
+  // Set default view (with routing persistence on refresh)
+  let initialRole = "visitor";
+  const hash = window.location.hash.replace("#", "");
+  if (["visitor", "seeker", "dude", "admin"].includes(hash)) {
+    initialRole = hash;
+  } else {
+    const savedRole = localStorage.getItem("tab_current_role");
+    if (savedRole && ["visitor", "seeker", "dude", "admin"].includes(savedRole)) {
+      initialRole = savedRole;
+    }
+  }
+  setRole(initialRole, { pinCurrentLocation: true });
+
+  // Handle browser back/forward navigation using hashchange
+  window.addEventListener("hashchange", () => {
+    const newHash = window.location.hash.replace("#", "");
+    if (["visitor", "seeker", "dude", "admin"].includes(newHash)) {
+      if (currentRole !== newHash) {
+        setRole(newHash, { pinCurrentLocation: true });
+      }
+    }
+  });
+
+  // Handle direct smooth scrolling to target sections on initial load
+  if (["how-it-works", "active-bounties", "features"].includes(hash)) {
+    setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 400);
+  }
+
+  // Helper for scrolling to landing page sections from other roles
+  const navigateToSection = (sectionId) => {
+    setRole("visitor", { pinCurrentLocation: false });
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  // Main Nav Links smooth scroll and role switching
+  const navHow = document.getElementById("nav-how");
+  if (navHow) {
+    navHow.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigateToSection("how-it-works");
+    });
+  }
+
+  const navMap = document.getElementById("nav-map");
+  if (navMap) {
+    navMap.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigateToSection("active-bounties");
+    });
+  }
+
+  const navFeatures = document.getElementById("nav-features");
+  if (navFeatures) {
+    navFeatures.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigateToSection("features");
+    });
+  }
 
   // Links Routing
   document.getElementById("btn-header-bounty").addEventListener("click", () => {
-    setRole("seeker");
+    setRole("seeker", { pinCurrentLocation: true });
   });
 
   document.getElementById("btn-header-dude").addEventListener("click", () => {
@@ -1055,7 +1150,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("hero-cta-post").addEventListener("click", () => {
-    setRole("seeker");
+    setRole("seeker", { pinCurrentLocation: true });
   });
 
   document.getElementById("hero-cta-dude").addEventListener("click", () => {
@@ -1345,6 +1440,108 @@ function loadGoogleMapsScript(apiKey) {
   document.head.appendChild(script);
 }
 
+function pinMapToCurrentLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        const userLatLng = { lat: userLat, lng: userLng };
+
+        // 1. Update Hidden Inputs
+        const latInput = document.getElementById("bounty-lat");
+        const lngInput = document.getElementById("bounty-lng");
+        if (latInput) latInput.value = userLat.toFixed(6);
+        if (lngInput) lngInput.value = userLng.toFixed(6);
+
+        // 2. Update Google Map Picker if initialized
+        if (googleMap && googleMarker) {
+          googleMap.setCenter(userLatLng);
+          googleMap.setZoom(15);
+          googleMarker.setPosition(userLatLng);
+          google.maps.event.trigger(googleMap, 'resize');
+          googleMap.setCenter(userLatLng);
+        }
+
+        // 3. Update Address Input using Geocoder
+        if (window.google && google.maps.Geocoder) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: userLatLng }, (results, status) => {
+            const input = document.getElementById("bounty-location-input");
+            if (input) {
+              if (status === "OK" && results[0]) {
+                input.value = results[0].formatted_address;
+              } else {
+                input.value = `Current Location (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
+              }
+            }
+          });
+        } else {
+          const input = document.getElementById("bounty-location-input");
+          if (input) {
+            input.value = `Current Location (${userLat.toFixed(4)}, ${userLng.toFixed(4)})`;
+          }
+        }
+
+        // 4. Update Mock SVG Map Picker if active
+        const svg = document.getElementById("mock-picker-svg");
+        const pin = document.getElementById("mock-picker-pin");
+        const latDisplay = document.getElementById("mock-lat-display");
+        const lngDisplay = document.getElementById("mock-lng-display");
+
+        if (svg && pin) {
+          if (latDisplay) latDisplay.textContent = userLat.toFixed(4);
+          if (lngDisplay) lngDisplay.textContent = userLng.toFixed(4);
+
+          const coordsToSvg = (lat, lng) => {
+            const latMin = 12.88;
+            const latMax = 13.06;
+            const lngMin = 77.48;
+            const lngMax = 77.78;
+            const x = ((lng - lngMin) / (lngMax - lngMin)) * 400;
+            const y = ((latMax - lat) / (latMax - latMin)) * 180;
+            return { x, y };
+          };
+
+          const svgPos = coordsToSvg(userLat, userLng);
+          const constrainedX = Math.max(0, Math.min(400, svgPos.x));
+          const constrainedY = Math.max(0, Math.min(180, svgPos.y));
+          pin.setAttribute("transform", `translate(${constrainedX}, ${constrainedY})`);
+
+          // Update Mock address
+          let closest = null;
+          let minDist = Infinity;
+          MOCK_LOCATIONS.forEach(loc => {
+            const d = Math.hypot(loc.lat - userLat, loc.lng - userLng);
+            if (d < minDist) {
+              minDist = d;
+              closest = loc;
+            }
+          });
+
+          const input = document.getElementById("bounty-location-input");
+          if (input) {
+            if (minDist < 0.05) {
+              input.value = `Near ${closest.name.split(",")[0]}, Bengaluru (Current Location)`;
+            } else {
+              input.value = `Current Location (${userLat.toFixed(4)}, ${userLng.toFixed(4)}), Bengaluru`;
+            }
+          }
+        }
+
+        showToast("📍 Pinned to your current location!");
+      },
+      (error) => {
+        console.log("Geolocation permission failed/denied.", error);
+        showToast("⚠️ Could not auto-pin location. Please select manually.");
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  } else {
+    showToast("⚠️ Geolocation is not supported by your browser.");
+  }
+}
+
 function initGoogleMapPicker() {
   const mapContainer = document.getElementById("bounty-map-preview");
   if (!mapContainer) return;
@@ -1418,6 +1615,9 @@ function initGoogleMapPicker() {
         document.getElementById("bounty-location-input").value = address;
       });
     });
+
+    // Try Geolocation to auto-pin to current location
+    pinMapToCurrentLocation();
   } catch (err) {
     console.error("Error loading Google Maps map picker", err);
     initMockMapPicker();
@@ -1601,4 +1801,7 @@ function initMockMapPicker() {
       }
     }, 300);
   });
+
+  // Try Geolocation to auto-pin to current location in Mock Mode
+  pinMapToCurrentLocation();
 }
