@@ -1055,12 +1055,20 @@ window.addEventListener("DOMContentLoaded", () => {
   // Setup Seeker Bounty Wizard
   setupBountyWizard();
 
-  // Load Google Maps API if key is saved or exists in .env
+  // Load Google Maps API if key is saved, defined in config.js, or exists in .env
   const savedKey = localStorage.getItem("google_maps_api_key");
+  const configKey = window.GOOGLE_MAPS_API_KEY;
   const keyInput = document.getElementById("api-key-input");
+  
   if (savedKey) {
     if (keyInput) keyInput.value = savedKey;
     loadGoogleMapsScript(savedKey);
+  } else if (configKey && configKey.trim() !== "") {
+    const key = configKey.trim();
+    if (keyInput) keyInput.value = key;
+    localStorage.setItem("google_maps_api_key", key);
+    loadGoogleMapsScript(key);
+    showToast("🔑 Google Maps API Key loaded from config.js");
   } else {
     fetch(".env")
       .then(response => {
