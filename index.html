@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=17.0">
+  <link rel="stylesheet" href="style.css?v=18.0">
   <link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
@@ -437,38 +437,93 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="bounty-room-type">Room Occupancy Type</label>
-                  <select id="bounty-room-type" required>
-                    <option value="Single Room">Single Room</option>
-                    <option value="Double Sharing">Double Sharing</option>
-                    <option value="Triple Sharing">Triple Sharing</option>
-                  </select>
+                  <label>Room Occupancy Type</label>
+                  <div class="segmented-control" id="occupancy-segmented">
+                    <button type="button" class="segment-btn active" data-value="Single Room">Single</button>
+                    <button type="button" class="segment-btn" data-value="Double Sharing">Double</button>
+                    <button type="button" class="segment-btn" data-value="Flatmate (Private)">Flatmate</button>
+                  </div>
+                  <input type="hidden" id="bounty-room-type" value="Single Room">
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
+                  <label>Dude Gender Preference</label>
+                  <div class="segmented-control" id="gender-segmented">
+                    <button type="button" class="segment-btn active" data-value="Any">Any Gender</button>
+                    <button type="button" class="segment-btn" data-value="Female">Female Only</button>
+                    <button type="button" class="segment-btn" data-value="Male">Male Only</button>
+                  </div>
+                  <input type="hidden" id="bounty-gender-pref" value="Any">
                 </div>
                 
-                <button type="button" class="btn btn-primary btn-block" id="btn-wizard-next-1">Next: Preferences ➔</button>
+                <button type="button" class="btn btn-primary btn-block" style="margin-top: 20px;" id="btn-wizard-next-1">Next: Preferences ➔</button>
               </div>
 
               <!-- STEP 2: Preferences & Notes -->
               <div class="wizard-step" id="wizard-step-2">
                 <div class="form-group">
-                  <label>Verification Preferences</label>
-                  <div class="checkbox-grid">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="pref-wifi" checked> Wi-Fi Speed Test
+                  <label>Select Verification Tasks</label>
+                  <div class="pref-grid">
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-wifi" checked>
+                      <div class="pref-card-content">
+                        <span class="pref-icon">📶</span>
+                        <span class="pref-title">Wi-Fi Speed Test</span>
+                        <p class="pref-desc">Verify live speed and coverage range</p>
+                      </div>
                     </label>
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="pref-food" checked> Food Quality Check
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-food" checked>
+                      <div class="pref-card-content">
+                        <span class="pref-icon">🍽️</span>
+                        <span class="pref-title">Food Audit</span>
+                        <p class="pref-desc">Audit kitchen hygiene & food taste</p>
+                      </div>
                     </label>
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="pref-washroom" checked> Washroom Walkthrough
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-washroom" checked>
+                      <div class="pref-card-content">
+                        <span class="pref-icon">🚿</span>
+                        <span class="pref-title">Washroom Check</span>
+                        <p class="pref-desc">Verify geyser, flow & water leaks</p>
+                      </div>
                     </label>
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="pref-restriction"> No Curfew/Restrictions
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-restriction">
+                      <div class="pref-card-content">
+                        <span class="pref-icon">🚪</span>
+                        <span class="pref-title">Curfew Policy</span>
+                        <p class="pref-desc">Confirm key access & curfew limits</p>
+                      </div>
+                    </label>
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-ac">
+                      <div class="pref-card-content">
+                        <span class="pref-icon">❄️</span>
+                        <span class="pref-title">AC & Backup</span>
+                        <p class="pref-desc">Verify backup load during cuts</p>
+                      </div>
+                    </label>
+                    <label class="pref-card">
+                      <input type="checkbox" id="pref-ventilation">
+                      <div class="pref-card-content">
+                        <span class="pref-icon">🪟</span>
+                        <span class="pref-title">Ventilation</span>
+                        <p class="pref-desc">Check natural light & balcony views</p>
+                      </div>
                     </label>
                   </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="food-preference-container" style="display: block; margin-top: 16px;">
+                  <label for="bounty-food-pref">Your Food Preference</label>
+                  <select id="bounty-food-pref" style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface);">
+                    <option value="Veg & Non-Veg">Veg & Non-Veg (Audit both kitchens)</option>
+                    <option value="Vegetarian Only">Vegetarian Only (Audit pure veg kitchen)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
                   <label for="bounty-notes">Special Instructions for your Dude</label>
                   <textarea id="bounty-notes" placeholder="e.g., 'Check if there is power backup, and ask if the balcony faces the main street...'" rows="3"></textarea>
                 </div>
@@ -669,6 +724,7 @@
               <div>
                 <h3 id="active-job-title">Active Job: Indiranagar PG Verification</h3>
                 <p id="active-job-budget">Seeker Budget: ₹12,000 | Deposit: 2 Months</p>
+                <div class="active-job-requirements" id="active-job-requirements" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
               </div>
               <div class="hub-status-badge status-visiting">In Progress</div>
             </div>

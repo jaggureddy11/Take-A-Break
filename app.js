@@ -403,7 +403,7 @@ function openSeekerChat(bountyId) {
   if (bounty.status === "submitted" || bounty.status === "completed") {
     reportBox.style.display = "block";
     document.getElementById("report-wifi-val").innerText = `${bounty.report.wifiSpeed} Mbps`;
-    document.getElementById("report-food-val").innerText = `${bounty.report.foodRating}/5 - Veg Meal verified`;
+    document.getElementById("report-food-val").innerText = `${bounty.report.foodRating}/5 - ${bounty.foodPref || 'Meals'} verified`;
     document.getElementById("report-map-link").href = bounty.report.location;
     
     const media = document.getElementById("report-media-gallery");
@@ -469,18 +469,25 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   const budget = parseInt(document.getElementById("bounty-budget").value);
   const deposit = parseInt(document.getElementById("bounty-deposit").value);
   const roomType = document.getElementById("bounty-room-type").value;
+  const genderPref = document.getElementById("bounty-gender-pref").value;
   const notes = document.getElementById("bounty-notes").value;
   
   const wifi = document.getElementById("pref-wifi").checked;
   const food = document.getElementById("pref-food").checked;
   const washroom = document.getElementById("pref-washroom").checked;
   const restriction = document.getElementById("pref-restriction").checked;
+  const ac = document.getElementById("pref-ac").checked;
+  const ventilation = document.getElementById("pref-ventilation").checked;
 
   const preferences = [];
   if (wifi) preferences.push("wifi");
   if (food) preferences.push("food");
   if (washroom) preferences.push("washroom");
   if (restriction) preferences.push("restriction");
+  if (ac) preferences.push("ac");
+  if (ventilation) preferences.push("ventilation");
+
+  const foodPref = food ? document.getElementById("bounty-food-pref").value : null;
 
   const newBounty = {
     id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -488,6 +495,8 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
     budget,
     deposit,
     roomType,
+    genderPref,
+    foodPref,
     preferences,
     notes,
     status: "pending",
@@ -507,6 +516,15 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   
   // Clear Form
   document.getElementById("post-bounty-form").reset();
+
+  // Reset active classes on segmented buttons
+  document.querySelectorAll("#occupancy-segmented .segment-btn").forEach(btn => btn.classList.remove("active"));
+  document.querySelector("#occupancy-segmented .segment-btn[data-value='Single Room']").classList.add("active");
+  document.getElementById("bounty-room-type").value = "Single Room";
+
+  document.querySelectorAll("#gender-segmented .segment-btn").forEach(btn => btn.classList.remove("active"));
+  document.querySelector("#gender-segmented .segment-btn[data-value='Any']").classList.add("active");
+  document.getElementById("bounty-gender-pref").value = "Any";
   
   // Reset Wizard Steps
   document.getElementById("wizard-step-3").classList.remove("active");
@@ -613,6 +631,26 @@ function renderDudeBoard() {
         </div>
         <span class="dude-bounty-payout">Payout: ₹400</span>
       </div>
+      <div class="open-job-prefs" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;">
+        ${(() => {
+          let html = "";
+          b.preferences.forEach(pref => {
+            let label = pref;
+            let icon = "📋";
+            if (pref === "wifi") { label = "Wi-Fi"; icon = "📶"; }
+            else if (pref === "food") { label = `Food (${b.foodPref === "Vegetarian Only" ? "Veg" : "Veg/Non-veg"})`; icon = "🍽️"; }
+            else if (pref === "washroom") { label = "Washroom"; icon = "🚿"; }
+            else if (pref === "restriction") { label = "Curfews"; icon = "🚪"; }
+            else if (pref === "ac") { label = "AC/Backup"; icon = "❄️"; }
+            else if (pref === "ventilation") { label = "Ventilation"; icon = "🪟"; }
+            html += `<span class="req-badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 4px; border: 1px solid var(--outline-variant);">${icon} ${label}</span>`;
+          });
+          if (b.genderPref && b.genderPref !== "Any") {
+            html += `<span class="req-badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--primary); color: var(--primary);">👤 ${b.genderPref} Only</span>`;
+          }
+          return html;
+        })()}
+      </div>
       <div style="font-size: 12px; color: var(--text-secondary); background: var(--surface-container-low); padding: 8px; border-radius: 6px;">
         <strong>Seeker Notes:</strong> "${b.notes || "None"}"
       </div>
@@ -639,6 +677,34 @@ function renderDudeBoard() {
     selectedBountyId = activeJob.id;
     document.getElementById("active-job-title").innerText = `Active Job: ${activeJob.area} PG Verification`;
     document.getElementById("active-job-budget").innerText = `Seeker: ${activeJob.seekerName} | Budget: ₹${activeJob.budget.toLocaleString()} | Deposit: ${activeJob.deposit} Months`;
+    
+    // Render active accepted job requirements
+    const reqContainer = document.getElementById("active-job-requirements");
+    if (reqContainer) {
+      reqContainer.innerHTML = "";
+      activeJob.preferences.forEach(pref => {
+        const badge = document.createElement("span");
+        badge.className = "req-badge";
+        let text = pref;
+        let icon = "📋";
+        if (pref === "wifi") { text = "Wi-Fi Speed Test"; icon = "📶"; }
+        else if (pref === "food") { text = `Food Audit (${activeJob.foodPref || 'Veg/Non-Veg'})`; icon = "🍽️"; }
+        else if (pref === "washroom") { text = "Washroom Walkthrough"; icon = "🚿"; }
+        else if (pref === "restriction") { text = "Curfew & Gate rules"; icon = "🚪"; }
+        else if (pref === "ac") { text = "AC & Power Backup"; icon = "❄️"; }
+        else if (pref === "ventilation") { text = "Balcony & Airflow"; icon = "🪟"; }
+        badge.innerHTML = `${icon} ${text}`;
+        reqContainer.appendChild(badge);
+      });
+      if (activeJob.genderPref && activeJob.genderPref !== "Any") {
+        const genderBadge = document.createElement("span");
+        genderBadge.className = "req-badge";
+        genderBadge.style.border = "1px solid var(--primary)";
+        genderBadge.style.color = "var(--primary)";
+        genderBadge.innerHTML = `👤 Dude Preference: ${activeJob.genderPref} Only`;
+        reqContainer.appendChild(genderBadge);
+      }
+    }
     
     // Load chat messages (dude perspective)
     renderChatHistory(activeJob.chat, "dude-chat-messages", "dude");
@@ -902,6 +968,33 @@ function setupBountyWizard() {
   const dot1 = document.getElementById("wizard-dot-1");
   const dot2 = document.getElementById("wizard-dot-2");
   const dot3 = document.getElementById("wizard-dot-3");
+
+  // Segmented Control helper
+  const setupSegmented = (containerId, hiddenInputId) => {
+    const container = document.getElementById(containerId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+    if (!container || !hiddenInput) return;
+
+    container.querySelectorAll(".segment-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        container.querySelectorAll(".segment-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        hiddenInput.value = btn.getAttribute("data-value");
+      });
+    });
+  };
+
+  setupSegmented("occupancy-segmented", "bounty-room-type");
+  setupSegmented("gender-segmented", "bounty-gender-pref");
+
+  // Food Preference Toggle
+  const foodCheckbox = document.getElementById("pref-food");
+  const foodContainer = document.getElementById("food-preference-container");
+  if (foodCheckbox && foodContainer) {
+    foodCheckbox.addEventListener("change", () => {
+      foodContainer.style.display = foodCheckbox.checked ? "block" : "none";
+    });
+  }
 
   next1.addEventListener("click", () => {
     // Validate Step 1 Inputs
