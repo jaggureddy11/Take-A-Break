@@ -26,6 +26,11 @@
       <button class="role-btn" data-role="dude" id="btn-role-dude">Dude Dashboard</button>
       <button class="role-btn" data-role="admin" id="btn-role-admin">Admin Control</button>
     </div>
+    <div class="api-key-container" id="api-key-container">
+      <span class="api-key-label">🔑 Maps API:</span>
+      <input type="password" id="api-key-input" placeholder="Paste Google Maps key...">
+      <button type="button" class="role-btn" id="btn-save-key" style="background: var(--primary); color: #fff; padding: 4px 10px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; border: none; cursor: pointer; margin-left: 4px;">Save</button>
+    </div>
   </div>
 
   <!-- Main Navigation Header -->
@@ -68,93 +73,9 @@
           <p class="hero-subtitle">
             Can't visit PGs in person due to work or college? Take a breath. Raise a bounty, let a local **Dude** physically inspect rooms, record raw video walkthroughs, and run diagnostics for you.
           </p>
-          <!-- NoBroker Style Search Console -->
-          <div class="nobroker-search-console">
-            <!-- Tabs -->
-            <div class="search-tabs">
-              <button type="button" class="search-tab active" data-tab="pg">Rent PG/Hostel</button>
-              <button type="button" class="search-tab" data-tab="flatmates">Flatmates</button>
-              <button type="button" class="search-tab" data-tab="fullhouse">Full House</button>
-            </div>
-            
-            <!-- Main Bar -->
-            <div class="search-main-bar">
-              <!-- City Select -->
-              <div class="city-selector">
-                <span class="selected-city" id="landing-selected-city">Bangalore</span>
-                <span class="dropdown-arrow">▼</span>
-                <div class="city-dropdown" id="landing-city-dropdown" style="display: none;">
-                  <div class="city-option">Bangalore</div>
-                  <div class="city-option">Mumbai</div>
-                  <div class="city-option">Delhi-NCR</div>
-                  <div class="city-option">Pune</div>
-                  <div class="city-option">Chennai</div>
-                </div>
-              </div>
-              
-              <!-- Divider -->
-              <div class="search-bar-divider"></div>
-              
-              <!-- Location tag container -->
-              <div class="search-location-container" id="landing-location-tag-container">
-                <div class="selected-tags" id="landing-location-selected-tags">
-                  <!-- Selected tags will appear here -->
-                </div>
-                <input type="text" id="landing-bounty-location-search" placeholder="Search preferred locations (e.g. Banashankari, Koramangala)..." autocomplete="off">
-                <!-- Autocomplete suggestions -->
-                <div class="autocomplete-suggestions" id="landing-location-suggestions" style="display: none;"></div>
-              </div>
-              <input type="hidden" id="landing-bounty-areas-hidden">
-              
-              <!-- Search CTA Button -->
-              <button type="button" class="btn btn-primary search-submit-btn" id="btn-landing-search">
-                🔍 Search Dudes
-              </button>
-            </div>
-            
-            <!-- Lower Options Row -->
-            <div class="search-options-row">
-              <!-- Occupancy Segment / Radios -->
-              <div class="option-group">
-                <label>Occupancy</label>
-                <div class="option-radios" id="landing-occupancy-options">
-                  <label class="radio-label">
-                    <input type="radio" name="landing-occupancy" value="Single Room" checked>
-                    <span>Single</span>
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="landing-occupancy" value="Double Sharing">
-                    <span>Double</span>
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" name="landing-occupancy" value="Flatmate (Private)">
-                    <span>Flatmate</span>
-                  </label>
-                </div>
-              </div>
-              
-              <!-- Gender Select -->
-              <div class="option-group">
-                <label for="landing-gender">Gender</label>
-                <select id="landing-gender" class="option-select">
-                  <option value="Any">Any Gender</option>
-                  <option value="Male">Male Only</option>
-                  <option value="Female">Female Only</option>
-                </select>
-              </div>
-              
-              <!-- Budget Select / Input -->
-              <div class="option-group">
-                <label for="landing-budget">Max Budget</label>
-                <select id="landing-budget" class="option-select">
-                  <option value="10000">₹10,000 / mo</option>
-                  <option value="15000" selected>₹15,000 / mo</option>
-                  <option value="20000">₹20,000 / mo</option>
-                  <option value="30000">₹30,000 / mo</option>
-                  <option value="50000">₹50,000 / mo</option>
-                </select>
-              </div>
-            </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" id="hero-cta-post">Post a Bounty (Start for ₹499)</button>
+            <button class="btn btn-secondary btn-lg" id="hero-cta-dude">Become a Dude & Earn</button>
           </div>
           <div class="hero-metrics">
             <div class="metric-item">
@@ -496,27 +417,46 @@
             <form id="post-bounty-form">
               <!-- STEP 1: Area & Budget -->
               <div class="wizard-step active" id="wizard-step-1">
-                <div class="form-group" style="position: relative;">
-                  <label>Preferred Locations (Select up to 3)</label>
-                  <div class="location-tag-input-container" id="location-tag-container">
-                    <div class="selected-tags" id="location-selected-tags">
-                      <!-- Selected tags will appear here -->
-                    </div>
-                    <input type="text" id="bounty-location-search" placeholder="Type preferred areas (e.g. Koramangala, Banashankari)..." autocomplete="off">
+                <div class="form-group">
+                  <label for="bounty-location-input">Preferred Location (Map Selection)</label>
+                  <div style="position: relative;">
+                    <input type="text" id="bounty-location-input" placeholder="Search area, landmark or street in Bengaluru..." required style="width: 100%; padding: 12px 12px 12px 34px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface); color: var(--text-primary); font-family: inherit; font-size: inherit;">
+                    <span style="position: absolute; left: 10px; top: 12px; font-size: 14px;">🔍</span>
                   </div>
-                  <!-- Suggestions Dropdown -->
-                  <div class="autocomplete-suggestions" id="location-suggestions" style="display: none;"></div>
-                  <input type="hidden" id="bounty-areas-hidden" required>
+                  <input type="hidden" id="bounty-lat" value="12.9716">
+                  <input type="hidden" id="bounty-lng" value="77.5946">
+                  
+                  <!-- Map Preview Box -->
+                  <div id="bounty-map-preview" style="height: 180px; width: 100%; background-color: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); margin-top: 10px; overflow: hidden; position: relative;">
+                    <!-- Placeholder/fallback when no API key is provided -->
+                    <div id="bounty-map-fallback" style="padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; font-size: 11px; color: var(--text-secondary);">
+                      <span style="font-size: 24px; margin-bottom: 4px;">🗺️</span>
+                      <strong>Google Maps Preview</strong>
+                      <p style="margin: 4px 0 0 0; font-size: 10px; line-height: 1.2;">Using mock coordinates. Paste a Google Maps API Key in the top bar to enable live geocoding & draggable markers.</p>
+                      <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: underline; margin-top: 4px;">How to get a key?</a>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="form-row">
                   <div class="form-group">
-                    <label for="bounty-budget">Max Budget (₹/mo)</label>
-                    <input type="number" id="bounty-budget" placeholder="e.g., 15000" min="4000" required>
+                    <label for="bounty-budget-min">Min Budget (₹/mo)</label>
+                    <input type="number" id="bounty-budget-min" placeholder="Min" min="1000" value="8000" required style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface);">
                   </div>
                   <div class="form-group">
-                    <label for="bounty-deposit">Max Deposit (months)</label>
-                    <input type="number" id="bounty-deposit" placeholder="e.g., 2" min="1" max="10" required>
+                    <label for="bounty-budget-max">Max Budget (₹/mo)</label>
+                    <input type="number" id="bounty-budget-max" placeholder="Max" min="1000" value="15000" required style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface);">
+                  </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 16px;">
+                  <div class="form-group">
+                    <label for="bounty-deposit-min">Min Deposit (months)</label>
+                    <input type="number" id="bounty-deposit-min" placeholder="Min" min="0" max="12" value="1" required style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface);">
+                  </div>
+                  <div class="form-group">
+                    <label for="bounty-deposit-max">Max Deposit (months)</label>
+                    <input type="number" id="bounty-deposit-max" placeholder="Max" min="0" max="12" value="3" required style="width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface);">
                   </div>
                 </div>
 
@@ -894,21 +834,6 @@
             <span class="stat-number">48</span>
             <span class="stat-subtext">Bengaluru listings</span>
           </div>
-        </div>
-
-        <!-- Admin Settings Card -->
-        <div class="bento-card admin-settings-card" style="margin-bottom: 24px;">
-          <h2>System Configuration</h2>
-          <div class="form-row" style="align-items: flex-end;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-              <label for="admin-gmaps-key">Google Maps API Key (Optional)</label>
-              <input type="text" id="admin-gmaps-key" placeholder="Enter Google Maps JavaScript API Key..." style="width: 100%; font-family: monospace;">
-            </div>
-            <button type="button" class="btn btn-primary" id="btn-save-gmaps-key" style="height: 48px;">Save & Load Maps API</button>
-          </div>
-          <p style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-            💡 If no key is saved, autocomplete queries will automatically use OpenStreetMap Nominatim and the local Bengaluru areas database.
-          </p>
         </div>
 
         <!-- Global Bounty Log Table -->

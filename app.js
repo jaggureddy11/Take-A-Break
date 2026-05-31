@@ -6,8 +6,15 @@ const DEFAULT_BOUNTIES = [
   {
     id: "B-8831",
     area: "Indiranagar",
-    budget: 14000,
-    deposit: 2,
+    locationName: "100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038",
+    lat: 12.9719,
+    lng: 77.6412,
+    budgetMin: 10000,
+    budgetMax: 15000,
+    budget: 15000,
+    depositMin: 1,
+    depositMax: 3,
+    deposit: 3,
     roomType: "Single Room",
     preferences: ["wifi", "food", "washroom"],
     notes: "Please check if the PG Mess has north-Indian food options, and run speed test near the window.",
@@ -26,7 +33,14 @@ const DEFAULT_BOUNTIES = [
   {
     id: "B-2144",
     area: "Koramangala",
+    locationName: "Koramangala 4th Block, Bengaluru, Karnataka 560034",
+    lat: 12.9352,
+    lng: 77.6244,
+    budgetMin: 8000,
+    budgetMax: 12000,
     budget: 12000,
+    depositMin: 2,
+    depositMax: 2,
     deposit: 2,
     roomType: "Double Sharing",
     preferences: ["wifi", "washroom"],
@@ -42,8 +56,15 @@ const DEFAULT_BOUNTIES = [
   {
     id: "B-9982",
     area: "HSR Layout",
+    locationName: "Sector 2, HSR Layout, Bengaluru, Karnataka 560102",
+    lat: 12.9105,
+    lng: 77.6450,
+    budgetMin: 12000,
+    budgetMax: 18000,
     budget: 18000,
-    deposit: 3,
+    depositMin: 2,
+    depositMax: 4,
+    deposit: 4,
     roomType: "Single Room",
     preferences: ["wifi", "food", "washroom", "restriction"],
     notes: "Looking for premium space in Sector 2. Need food quality check.",
@@ -66,8 +87,15 @@ const DEFAULT_BOUNTIES = [
   {
     id: "B-1024",
     area: "Whitefield",
+    locationName: "Whitefield, Bengaluru, Karnataka 560066",
+    lat: 12.9698,
+    lng: 77.7499,
+    budgetMin: 10000,
+    budgetMax: 16000,
     budget: 16000,
-    deposit: 1,
+    depositMin: 1,
+    depositMax: 2,
+    deposit: 2,
     roomType: "Single Room",
     preferences: ["wifi"],
     notes: "Check if the flatmates are quiet, and verify mobile reception inside the room.",
@@ -249,14 +277,15 @@ function renderLandingBounties() {
       statusText = "Verified";
     }
 
-    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
+    const budgetStr = b.budgetMin ? `₹${b.budgetMin.toLocaleString()} - ₹${b.budgetMax.toLocaleString()}` : `₹${b.budget.toLocaleString()}`;
+
     item.innerHTML = `
       <div class="bounty-info-block">
         <span class="bounty-loc-badge">
-          📍 ${displayArea} 
+          📍 ${b.area} 
           <span class="bounty-loc-tag">${b.roomType}</span>
         </span>
-        <span class="bounty-specs">Budget: ₹${b.budget.toLocaleString()} | Seeker: ${b.seekerName}</span>
+        <span class="bounty-specs">Budget: ${budgetStr} | Seeker: ${b.seekerName}</span>
       </div>
       <div class="bounty-price-block">
         <span class="bounty-amount">₹499 Bounty</span>
@@ -280,14 +309,35 @@ function renderLandingBounties() {
 // Setup Map interaction
 function setupInteractiveMap() {
   const nodes = document.querySelectorAll(".map-node");
+  const locationInput = document.getElementById("bounty-location-input");
+  const latInput = document.getElementById("bounty-lat");
+  const lngInput = document.getElementById("bounty-lng");
 
   nodes.forEach(node => {
     node.addEventListener("click", () => {
       const area = node.dataset.area;
       showToast(`Selected area: ${area}`);
-      if (window.addAreaTagGlobal) {
-        window.addAreaTagGlobal(area);
+      if (locationInput) {
+        locationInput.value = `${area}, Bengaluru`;
       }
+
+      // Match coordinate
+      const matched = MOCK_LOCATIONS.find(loc => loc.name.toLowerCase().includes(area.toLowerCase()));
+      if (matched) {
+        if (latInput) latInput.value = matched.lat;
+        if (lngInput) lngInput.value = matched.lng;
+        
+        // Sync map
+        if (googleMap && googleMarker) {
+          const latLng = { lat: matched.lat, lng: matched.lng };
+          googleMap.setCenter(latLng);
+          googleMap.setZoom(14);
+          googleMarker.setPosition(latLng);
+        } else {
+          initMockMapPicker();
+        }
+      }
+      
       // Route to seeker dashboard to complete post
       setRole("seeker");
     });
@@ -324,12 +374,13 @@ function renderSeekerBounties() {
       statusText = "Completed";
     }
 
-    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
+    const budgetStr = b.budgetMin ? `₹${b.budgetMin.toLocaleString()} - ₹${b.budgetMax.toLocaleString()}` : `₹${b.budget.toLocaleString()}`;
+
     card.innerHTML = `
       <div class="bounty-card-header">
         <div>
-          <h4>📍 ${displayArea}</h4>
-          <span class="bounty-specs">${b.roomType} | Budget: ₹${b.budget.toLocaleString()}</span>
+          <h4>📍 ${b.area}</h4>
+          <span class="bounty-specs">${b.roomType} | Budget: ${budgetStr}</span>
         </div>
         <span class="bounty-status-label ${statusClass}">${statusText}</span>
       </div>
@@ -364,8 +415,17 @@ function openSeekerChat(bountyId) {
   hub.style.display = "flex";
   
   // Header details
-  const displayArea = Array.isArray(bounty.area) ? bounty.area.join(" / ") : bounty.area;
-  document.getElementById("chat-bounty-details").innerText = `${displayArea} PG Bounty - Budget ₹${bounty.budget.toLocaleString()}`;
+  document.getElementById("chat-dude-name").innerText = bounty.dudeName || "Dude System";
+  
+  const budgetStr = bounty.budgetMin ? `₹${bounty.budgetMin.toLocaleString()} - ₹${bounty.budgetMax.toLocaleString()}` : `₹${bounty.budget.toLocaleString()}`;
+  const detailsEl = document.getElementById("chat-bounty-details");
+  let detailsText = `${bounty.area} PG Bounty - Budget ${budgetStr}`;
+  if (bounty.lat && bounty.lng) {
+    detailsText += ` | <a href="https://www.google.com/maps/search/?api=1&query=${bounty.lat},${bounty.lng}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: bold;">📍 View Coordinates</a>`;
+    detailsEl.innerHTML = detailsText;
+  } else {
+    detailsEl.innerText = detailsText;
+  }
   
   const statusBadge = document.getElementById("chat-status-badge");
   statusBadge.className = "hub-status-badge";
@@ -466,14 +526,18 @@ function renderChatHistory(chatArray, elementId, viewerRole) {
 document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   e.preventDefault();
   
-  const areasStr = document.getElementById("bounty-areas-hidden").value;
-  if (!areasStr) {
-    showToast("⚠️ Please select at least one preferred location.");
-    return;
-  }
-  const area = areasStr.split(",");
-  const budget = parseInt(document.getElementById("bounty-budget").value);
-  const deposit = parseInt(document.getElementById("bounty-deposit").value);
+  const locationName = document.getElementById("bounty-location-input").value;
+  const lat = parseFloat(document.getElementById("bounty-lat").value);
+  const lng = parseFloat(document.getElementById("bounty-lng").value);
+  
+  let area = locationName.split(",")[0].trim();
+  if (!area) area = "Bengaluru";
+
+  const budgetMin = parseInt(document.getElementById("bounty-budget-min").value);
+  const budgetMax = parseInt(document.getElementById("bounty-budget-max").value);
+  const depositMin = parseInt(document.getElementById("bounty-deposit-min").value);
+  const depositMax = parseInt(document.getElementById("bounty-deposit-max").value);
+
   const roomType = document.getElementById("bounty-room-type").value;
   const genderPref = document.getElementById("bounty-gender-pref").value;
   const notes = document.getElementById("bounty-notes").value;
@@ -498,8 +562,15 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   const newBounty = {
     id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
     area,
-    budget,
-    deposit,
+    locationName,
+    lat,
+    lng,
+    budgetMin,
+    budgetMax,
+    budget: budgetMax, // fallback
+    depositMin,
+    depositMax,
+    deposit: depositMax, // fallback
     roomType,
     genderPref,
     foodPref,
@@ -522,6 +593,8 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   
   // Clear Form
   document.getElementById("post-bounty-form").reset();
+  document.getElementById("bounty-lat").value = "12.9716";
+  document.getElementById("bounty-lng").value = "77.5946";
 
   // Reset active classes on segmented buttons
   document.querySelectorAll("#occupancy-segmented .segment-btn").forEach(btn => btn.classList.remove("active"));
@@ -531,12 +604,17 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   document.querySelectorAll("#gender-segmented .segment-btn").forEach(btn => btn.classList.remove("active"));
   document.querySelector("#gender-segmented .segment-btn[data-value='Any']").classList.add("active");
   document.getElementById("bounty-gender-pref").value = "Any";
-
-  // Reset selected tags UI
-  if (window.clearAreaTagsGlobal) {
-    window.clearAreaTagsGlobal();
-  }
   
+  // Reset Maps
+  if (googleMap && googleMarker) {
+    const defaultLatLng = { lat: 12.9716, lng: 77.5946 };
+    googleMap.setCenter(defaultLatLng);
+    googleMap.setZoom(13);
+    googleMarker.setPosition(defaultLatLng);
+  } else {
+    initMockMapPicker();
+  }
+
   // Reset Wizard Steps
   document.getElementById("wizard-step-3").classList.remove("active");
   document.getElementById("wizard-step-1").classList.add("active");
@@ -634,11 +712,14 @@ function renderDudeBoard() {
     card.style.height = "auto";
     card.style.gap = "12px";
 
+    const budgetStr = b.budgetMin ? `₹${b.budgetMin.toLocaleString()} - ₹${b.budgetMax.toLocaleString()}` : `₹${b.budget.toLocaleString()}`;
+    const depositStr = b.depositMin !== undefined ? `${b.depositMin} - ${b.depositMax} months` : `${b.deposit} Months`;
+
     card.innerHTML = `
       <div class="bounty-card-header" style="width:100%;">
         <div>
-          <h4>📍 ${Array.isArray(b.area) ? b.area.join(" / ") : b.area}</h4>
-          <span class="bounty-specs">${b.roomType} | Budget: ₹${b.budget.toLocaleString()}</span>
+          <h4>📍 ${b.area}</h4>
+          <span class="bounty-specs">${b.roomType} | Budget: ${budgetStr} | Deposit: ${depositStr}</span>
         </div>
         <span class="dude-bounty-payout">Payout: ₹400</span>
       </div>
@@ -686,9 +767,15 @@ function renderDudeBoard() {
   if (activeJob) {
     activeHub.style.display = "flex";
     selectedBountyId = activeJob.id;
-    const displayArea = Array.isArray(activeJob.area) ? activeJob.area.join(" / ") : activeJob.area;
-    document.getElementById("active-job-title").innerText = `Active Job: ${displayArea} PG Verification`;
-    document.getElementById("active-job-budget").innerText = `Seeker: ${activeJob.seekerName} | Budget: ₹${activeJob.budget.toLocaleString()} | Deposit: ${activeJob.deposit} Months`;
+    document.getElementById("active-job-title").innerText = `Active Job: ${activeJob.area} PG Verification`;
+    
+    const budgetStr = activeJob.budgetMin ? `₹${activeJob.budgetMin.toLocaleString()} - ₹${activeJob.budgetMax.toLocaleString()}` : `₹${activeJob.budget.toLocaleString()}`;
+    const depositStr = activeJob.depositMin !== undefined ? `${activeJob.depositMin} - ${activeJob.depositMax} months` : `${activeJob.deposit} Months`;
+    let jobInfo = `Seeker: ${activeJob.seekerName} | Budget: ${budgetStr} | Deposit: ${depositStr}`;
+    if (activeJob.lat && activeJob.lng) {
+      jobInfo += ` | <a href="https://www.google.com/maps/search/?api=1&query=${activeJob.lat},${activeJob.lng}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 700;">📍 Open Navigation (Google Maps)</a>`;
+    }
+    document.getElementById("active-job-budget").innerHTML = jobInfo;
     
     // Render active accepted job requirements
     const reqContainer = document.getElementById("active-job-requirements");
@@ -725,7 +812,6 @@ function renderDudeBoard() {
   }
 
   // Wallet stats
-  // Let's compute earnings: completed bounties by dude Rahul K.
   const completedBounties = db.filter(b => b.dudeName === "Rahul K." && b.status === "completed");
   const pendingBounties = db.filter(b => b.dudeName === "Rahul K." && b.status === "submitted");
   
@@ -741,9 +827,14 @@ function acceptDudeTask(bountyId) {
 
   bounty.status = "visiting";
   bounty.dudeName = "Rahul K."; // Assign to our current session dude
+  
+  const welcomeMsg = bounty.locationName 
+    ? `Hello! I've accepted your PG verification bounty for ${bounty.locationName}. Heading over to inspect it now.`
+    : `Hello! I've accepted your PG verification bounty. Heading over to inspect coordinates now. Let me know if you want me to look for anything specific.`;
+
   bounty.chat.push({
     sender: "dude",
-    text: "Hello! I've accepted your PG verification bounty. Heading over to inspect coordinates now. Let me know if you want me to look for anything specific.",
+    text: welcomeMsg,
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
 
@@ -751,8 +842,7 @@ function acceptDudeTask(bountyId) {
   showToast(`Accepted bounty task ${bountyId}. Heading to ground location.`);
   
   // Trigger Map Scooter Animation
-  const travelArea = Array.isArray(bounty.area) ? bounty.area[0] : bounty.area;
-  animateDudeTravel(travelArea);
+  animateDudeTravel(bounty.area);
 
   // Simulate Dude arrival after 3 seconds
   setTimeout(() => {
@@ -859,7 +949,6 @@ function renderAdminPanel() {
       platformRevenue += 99;
     }
 
-    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
     const tr = document.createElement("tr");
     
     let statusText = "Pending Assignment";
@@ -882,10 +971,12 @@ function renderAdminPanel() {
       escrowText = "⚠️ Disputed hold";
     }
 
+    const budgetStr = b.budgetMin ? `₹${b.budgetMin.toLocaleString()} - ₹${b.budgetMax.toLocaleString()}` : `₹${b.budget.toLocaleString()}`;
+
     tr.innerHTML = `
       <td><strong>${b.id}</strong></td>
-      <td>📍 ${displayArea}</td>
-      <td>₹${b.budget.toLocaleString()}</td>
+      <td>📍 ${b.area}</td>
+      <td>${budgetStr}</td>
       <td>${b.seekerName}</td>
       <td>${b.dudeName || '<span style="color:var(--text-muted);">None</span>'}</td>
       <td><span class="bounty-status-label ${statusClass}">${statusText}</span></td>
@@ -930,9 +1021,6 @@ window.addEventListener("DOMContentLoaded", () => {
   // Setup area click
   setupInteractiveMap();
 
-  // Setup location autocomplete tag input
-  setupLocationAutocomplete();
-
   // Load Bounties feed
   renderLandingBounties();
 
@@ -956,191 +1044,66 @@ window.addEventListener("DOMContentLoaded", () => {
     setRole("visitor");
   });
 
-  const heroPost = document.getElementById("hero-cta-post");
-  if (heroPost) {
-    heroPost.addEventListener("click", () => {
-      setRole("seeker");
-    });
-  }
+  document.getElementById("hero-cta-post").addEventListener("click", () => {
+    setRole("seeker");
+  });
 
-  const heroDude = document.getElementById("hero-cta-dude");
-  if (heroDude) {
-    heroDude.addEventListener("click", () => {
-      setRole("dude");
-    });
-  }
+  document.getElementById("hero-cta-dude").addEventListener("click", () => {
+    setRole("dude");
+  });
 
   // Setup Seeker Bounty Wizard
   setupBountyWizard();
 
-  // Setup NoBroker Landing Page search console controls
-  setupLandingSearchConsole();
-
-  // Load saved Google Maps API key on start
-  const savedKey = localStorage.getItem("tab_gmaps_key");
+  // Load Google Maps API if key is saved or exists in .env
+  const savedKey = localStorage.getItem("google_maps_api_key");
+  const keyInput = document.getElementById("api-key-input");
   if (savedKey) {
-    loadGoogleMapsAPI(savedKey);
-    const keyInput = document.getElementById("admin-gmaps-key");
     if (keyInput) keyInput.value = savedKey;
+    loadGoogleMapsScript(savedKey);
+  } else {
+    fetch(".env")
+      .then(response => {
+        if (!response.ok) throw new Error("Could not load .env");
+        return response.text();
+      })
+      .then(text => {
+        const match = text.match(/GOOGLE_MAPS_API_KEY\s*=\s*([^\s#\n\r]+)/);
+        if (match && match[1]) {
+          const key = match[1].trim();
+          if (keyInput) keyInput.value = key;
+          localStorage.setItem("google_maps_api_key", key);
+          loadGoogleMapsScript(key);
+          showToast("🔑 Google Maps API Key loaded from .env");
+        } else {
+          initMockMapPicker();
+        }
+      })
+      .catch(err => {
+        initMockMapPicker();
+      });
   }
 
-  // Save Google Maps API Key handler
-  const saveKeyBtn = document.getElementById("btn-save-gmaps-key");
-  if (saveKeyBtn) {
-    saveKeyBtn.addEventListener("click", () => {
-      const keyInput = document.getElementById("admin-gmaps-key");
-      const key = keyInput ? keyInput.value.trim() : "";
-      if (key) {
-        localStorage.setItem("tab_gmaps_key", key);
-        loadGoogleMapsAPI(key);
-        showToast("💾 Google Maps API Key saved and loading script...");
+  // Setup save API key button
+  const saveBtn = document.getElementById("btn-save-key");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const keyVal = document.getElementById("api-key-input").value.trim();
+      if (keyVal) {
+        localStorage.setItem("google_maps_api_key", keyVal);
+        showToast("🔑 Google Maps API Key saved! Loading Maps...");
+        loadGoogleMapsScript(keyVal);
       } else {
-        localStorage.removeItem("tab_gmaps_key");
-        showToast("🗑️ Google Maps API Key removed. Using offline fallback.");
+        localStorage.removeItem("google_maps_api_key");
+        showToast("ℹ️ API Key cleared. Reverting to Mock Offline Map.");
+        googleMap = null;
+        googleMarker = null;
+        autocomplete = null;
+        initMockMapPicker();
       }
     });
   }
 });
-
-function loadGoogleMapsAPI(key) {
-  if (!key) return;
-  const scriptId = "google-maps-places-script";
-  if (document.getElementById(scriptId)) return; // already loading
-
-  const script = document.createElement("script");
-  script.id = scriptId;
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=initGoogleMapsAutocomplete`;
-  script.async = true;
-  script.defer = true;
-  script.onerror = () => {
-    showToast("❌ Failed to load Google Maps API. Check your key/connection.");
-  };
-  document.head.appendChild(script);
-}
-
-window.initGoogleMapsAutocomplete = () => {
-  console.log("Google Maps Places API loaded successfully!");
-  showToast("✅ Google Maps Places API loaded.");
-};
-
-function setupLandingSearchConsole() {
-  const citySelector = document.querySelector(".city-selector");
-  const cityDropdown = document.getElementById("landing-city-dropdown");
-  const selectedCitySpan = document.getElementById("landing-selected-city");
-  
-  if (citySelector && cityDropdown && selectedCitySpan) {
-    citySelector.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isVisible = cityDropdown.style.display === "block";
-      cityDropdown.style.display = isVisible ? "none" : "block";
-    });
-    
-    document.querySelectorAll(".city-option").forEach(opt => {
-      opt.addEventListener("click", (e) => {
-        e.stopPropagation();
-        selectedCitySpan.textContent = opt.textContent;
-        cityDropdown.style.display = "none";
-        showToast(`City set to: ${opt.textContent}`);
-      });
-    });
-    
-    document.addEventListener("click", () => {
-      cityDropdown.style.display = "none";
-    });
-  }
-
-  // Search Tabs logic
-  document.querySelectorAll(".search-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".search-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      
-      const tabVal = tab.getAttribute("data-tab");
-      const occupancyRadios = document.getElementById("landing-occupancy-options");
-      
-      if (tabVal === "pg") {
-        if (occupancyRadios) occupancyRadios.style.display = "flex";
-        const radioSingle = document.querySelector('input[name="landing-occupancy"][value="Single Room"]');
-        if (radioSingle) radioSingle.checked = true;
-      } else if (tabVal === "flatmates") {
-        if (occupancyRadios) occupancyRadios.style.display = "flex";
-        const radioFlatmate = document.querySelector('input[name="landing-occupancy"][value="Flatmate (Private)"]');
-        if (radioFlatmate) radioFlatmate.checked = true;
-      } else if (tabVal === "fullhouse") {
-        if (occupancyRadios) occupancyRadios.style.display = "flex";
-        const radioSingle = document.querySelector('input[name="landing-occupancy"][value="Single Room"]');
-        if (radioSingle) radioSingle.checked = true;
-      }
-    });
-  });
-
-  // Search button action
-  const searchBtn = document.getElementById("btn-landing-search");
-  if (searchBtn) {
-    searchBtn.addEventListener("click", () => {
-      const locations = document.getElementById("landing-bounty-areas-hidden").value;
-      if (!locations) {
-        showToast("⚠️ Please select at least one preferred location.");
-        return;
-      }
-      
-      const occupancyVal = document.querySelector('input[name="landing-occupancy"]:checked').value;
-      const genderVal = document.getElementById("landing-gender").value;
-      const budgetVal = document.getElementById("landing-budget").value;
-      
-      // Route to seeker dashboard
-      setRole("seeker");
-      
-      // Update wizard fields
-      const wizardHiddenInput = document.getElementById("bounty-areas-hidden");
-      if (wizardHiddenInput) {
-        wizardHiddenInput.value = locations;
-        selectedAreas = locations.split(",");
-        if (window.updateAreaTagsUI) {
-          window.updateAreaTagsUI();
-        }
-      }
-      
-      const wizardBudgetInput = document.getElementById("bounty-budget");
-      if (wizardBudgetInput) wizardBudgetInput.value = budgetVal;
-      
-      const wizardDepositInput = document.getElementById("bounty-deposit");
-      if (wizardDepositInput) wizardDepositInput.value = 2; // default
-      
-      // Segmented control active status updates
-      const wizardOccupancyInput = document.getElementById("bounty-room-type");
-      if (wizardOccupancyInput) {
-        wizardOccupancyInput.value = occupancyVal;
-        document.querySelectorAll("#occupancy-segmented .segment-btn").forEach(btn => {
-          btn.classList.remove("active");
-          if (btn.getAttribute("data-value") === occupancyVal) btn.classList.add("active");
-        });
-      }
-      
-      const wizardGenderInput = document.getElementById("bounty-gender-pref");
-      if (wizardGenderInput) {
-        wizardGenderInput.value = genderVal;
-        document.querySelectorAll("#gender-segmented .segment-btn").forEach(btn => {
-          btn.classList.remove("active");
-          if (btn.getAttribute("data-value") === genderVal) btn.classList.add("active");
-        });
-      }
-      
-      // Advance to Step 2
-      const step1 = document.getElementById("wizard-step-1");
-      const step2 = document.getElementById("wizard-step-2");
-      const dot2 = document.getElementById("wizard-dot-2");
-      
-      if (step1 && step2 && dot2) {
-        step1.classList.remove("active");
-        step2.classList.add("active");
-        dot2.classList.add("active");
-      }
-      
-      showToast("🔍 Preferred locations loaded! Customize your verification tasks.");
-    });
-  }
-}
 
 // ==========================================================================
 // INTERACTIVE MULTI-STEP BOUNTY WIZARD & SCOOTER TRAVEL TIMELINE ANIMATOR
@@ -1189,12 +1152,24 @@ function setupBountyWizard() {
 
   next1.addEventListener("click", () => {
     // Validate Step 1 Inputs
-    const area = document.getElementById("bounty-areas-hidden").value;
-    const budget = document.getElementById("bounty-budget").value;
-    const deposit = document.getElementById("bounty-deposit").value;
+    const locationInput = document.getElementById("bounty-location-input").value;
+    const budgetMin = document.getElementById("bounty-budget-min").value;
+    const budgetMax = document.getElementById("bounty-budget-max").value;
+    const depositMin = document.getElementById("bounty-deposit-min").value;
+    const depositMax = document.getElementById("bounty-deposit-max").value;
 
-    if (!area || !budget || !deposit) {
-      showToast("⚠️ Please select preferred locations, budget, and deposit limit.");
+    if (!locationInput || !budgetMin || !budgetMax || !depositMin || !depositMax) {
+      showToast("⚠️ Please fill in the location, budget range, and deposit range.");
+      return;
+    }
+
+    if (parseInt(budgetMin) > parseInt(budgetMax)) {
+      showToast("⚠️ Min budget cannot be greater than Max budget.");
+      return;
+    }
+
+    if (parseInt(depositMin) > parseInt(depositMax)) {
+      showToast("⚠️ Min deposit cannot be greater than Max deposit.");
       return;
     }
 
@@ -1222,213 +1197,6 @@ function setupBountyWizard() {
   });
 }
 
-// ==========================================================================
-// ==========================================================================
-// AUTOCOMPLETE MULTIPLE LOCATION TAG SELECTOR (NoBroker style)
-// ==========================================================================
-
-const BENGALURU_AREAS = [
-  "Koramangala", "HSR Layout", "Indiranagar", "Whitefield", "Hebbal",
-  "Yeshwanthpur", "Bellandur", "Marathahalli", "BTM Layout", "Jayanagar",
-  "Banashankari", "Electronic City", "Vajarahalli Colony", "JP Nagar",
-  "Sadashivanagar", "Malleshwaram", "Rajajinagar", "Outer Ring Road",
-  "Domlur", "Kalyan Nagar", "RT Nagar", "CV Raman Nagar", "Bannerghatta Road",
-  "MG Road", "Ulsoor", "Frazer Town", "Richards Town", "Cooke Town",
-  "Benson Town", "Vasanth Nagar", "Cunningham Road", "Lavelle Road",
-  "Kasturi Nagar", "HRBR Layout", "Hennur", "Kammanahalli", "Kothanur",
-  "Thanisandra", "Jakkur", "Yelahanka", "Sahakar Nagar", "Sanjay Nagar",
-  "New BEL Road", "Mathikere", "Gokula", "Vidyaranyapura", "Peenya",
-  "Nagasandra", "Chandra Layout", "Vijayangar", "Basaveshwaranagar",
-  "Mahalakshmi Layout", "Nagarbhavi", "Kengeri", "RR Nagar", "Uttarahalli",
-  "Padmanabhanagar", "Kumaraswamy Layout", "ISRO Layout", "Kanakapura Road",
-  "Anjanapura", "Giri Nagar", "Srinagar", "Basavanagudi", "Hanumantha Nagar",
-  "Chamarajpet", "Gandhi Nagar", "Majestic", "Chickpet", "Kalasipalyam",
-  "Wilson Garden", "Sudhama Nagar", "Shanti Nagar", "Richmond Town",
-  "Langford Town", "Victoria Layout", "Austin Town", "Ejipura", "Adugodi",
-  "Madivala", "Tavarekere", "Bommanahalli", "Singasandra", "Begur",
-  "Hulimavu", "Arekere", "Gottigere", "Doddanekundi", "Kadugodi",
-  "Hoodi", "Varthur", "Brookefield", "Kundalahalli", "Munnekollal",
-  "Panathur", "Kadubeesanahalli", "Devarabeesanahalli", "Sarjapur Road",
-  "Kasavanahalli", "Haralur", "Halanayakanahalli", "Carmelaram", "Gunjur",
-  "Vajarahalli", "Talaghattapura", "Kaggalipura"
-];
-
-let selectedAreas = [];
-
-// Get local offline suggestions
-function getLocalSuggestions(query) {
-  return BENGALURU_AREAS.filter(area => 
-    area.toLowerCase().includes(query.toLowerCase()) && !selectedAreas.includes(area)
-  );
-}
-
-// Fetch from OSM Nominatim
-async function getOSMSuggestions(query) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&viewbox=77.3,12.7,77.9,13.2&bounded=1&limit=6`;
-    const response = await fetch(url, {
-      headers: {
-        'Accept-Language': 'en'
-      }
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return data.map(item => {
-      const parts = item.display_name.split(',');
-      return parts[0].trim();
-    }).filter(name => name.length > 2);
-  } catch (e) {
-    console.error("OSM Nominatim error:", e);
-    return [];
-  }
-}
-
-// Fetch suggestions from available service (Google or Fallbacks)
-async function fetchSuggestions(query, callback) {
-  // 1. Google Places Autocomplete if key is loaded
-  if (window.google && google.maps && google.maps.places) {
-    if (!window.gmapsAutocompleteService) {
-      window.gmapsAutocompleteService = new google.maps.places.AutocompleteService();
-    }
-    window.gmapsAutocompleteService.getPlacePredictions({
-      input: query,
-      componentRestrictions: { country: 'in' },
-      locationBias: { radius: 25000, center: { lat: 12.9716, lng: 77.5946 } }
-    }, (predictions, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-        const results = predictions.map(p => p.structured_formatting.main_text);
-        const filtered = [...new Set(results)].filter(item => !selectedAreas.includes(item));
-        callback(filtered);
-      } else {
-        callback(getLocalSuggestions(query));
-      }
-    });
-    return;
-  }
-
-  // 2. Hybrid Fallback (Local instant + OSM Nominatim background)
-  const localMatches = getLocalSuggestions(query);
-  callback(localMatches);
-
-  if (query.length > 2) {
-    const osmMatches = await getOSMSuggestions(query);
-    if (osmMatches.length > 0) {
-      const merged = [...new Set([...localMatches, ...osmMatches])].filter(item => !selectedAreas.includes(item));
-      callback(merged);
-    }
-  }
-}
-
-function setupLocationAutocomplete() {
-  const autocompleteConfigs = [
-    {
-      searchInput: document.getElementById("bounty-location-search"),
-      suggestionsBox: document.getElementById("location-suggestions")
-    },
-    {
-      searchInput: document.getElementById("landing-bounty-location-search"),
-      suggestionsBox: document.getElementById("landing-location-suggestions")
-    }
-  ];
-
-  autocompleteConfigs.forEach(cfg => {
-    const { searchInput, suggestionsBox } = cfg;
-    if (!searchInput || !suggestionsBox) return;
-
-    searchInput.addEventListener("input", (e) => {
-      const query = e.target.value.trim();
-      if (!query) {
-        suggestionsBox.style.display = "none";
-        return;
-      }
-
-      fetchSuggestions(query, (matches) => {
-        if (matches.length === 0) {
-          suggestionsBox.style.display = "none";
-          return;
-        }
-
-        suggestionsBox.innerHTML = "";
-        matches.forEach(area => {
-          const item = document.createElement("div");
-          item.className = "suggestion-item";
-          item.innerText = area;
-          item.addEventListener("click", () => {
-            addAreaTag(area);
-            searchInput.value = "";
-            suggestionsBox.style.display = "none";
-            searchInput.focus();
-          });
-          suggestionsBox.appendChild(item);
-        });
-
-        suggestionsBox.style.display = "block";
-      });
-    });
-
-    // Close on click outside
-    document.addEventListener("click", (e) => {
-      if (e.target !== searchInput && e.target !== suggestionsBox) {
-        suggestionsBox.style.display = "none";
-      }
-    });
-  });
-
-  function addAreaTag(area) {
-    if (selectedAreas.length >= 3) {
-      showToast("⚠️ You can select up to 3 preferred locations.");
-      return;
-    }
-    if (selectedAreas.includes(area)) return;
-
-    selectedAreas.push(area);
-    window.updateAreaTagsUI();
-  }
-
-  function removeAreaTag(area) {
-    selectedAreas = selectedAreas.filter(a => a !== area);
-    window.updateAreaTagsUI();
-  }
-
-  // Update both tag containers
-  window.updateAreaTagsUI = () => {
-    const targets = [
-      { container: document.getElementById("location-selected-tags"), hidden: document.getElementById("bounty-areas-hidden") },
-      { container: document.getElementById("landing-location-selected-tags"), hidden: document.getElementById("landing-bounty-areas-hidden") }
-    ];
-
-    targets.forEach(t => {
-      if (!t.container) return;
-      t.container.innerHTML = "";
-      selectedAreas.forEach(area => {
-        const chip = document.createElement("span");
-        chip.className = "selected-tag-chip";
-        chip.innerHTML = `
-          ${area}
-          <button type="button" class="remove-tag-btn" data-value="${area}">&times;</button>
-        `;
-        chip.querySelector(".remove-tag-btn").addEventListener("click", () => {
-          removeAreaTag(area);
-        });
-        t.container.appendChild(chip);
-      });
-      if (t.hidden) {
-        t.hidden.value = selectedAreas.join(",");
-      }
-    });
-  };
-
-  // Expose global methods
-  window.addAreaTagGlobal = (area) => {
-    addAreaTag(area);
-  };
-
-  window.clearAreaTagsGlobal = () => {
-    selectedAreas = [];
-    window.updateAreaTagsUI();
-  };
-}
-
 function animateDudeTravel(areaName) {
   const svg = document.getElementById("bglr-svg-map");
   if (!svg) return;
@@ -1443,8 +1211,17 @@ function animateDudeTravel(areaName) {
     "Yeshwanthpur": { cx: 160, cy: 280 }
   };
 
-  const target = coordsMap[areaName];
-  if (!target) return;
+  let target = coordsMap[areaName];
+  if (!target) {
+    // If not found directly, try to search if areaName contains any of the keys
+    const foundKey = Object.keys(coordsMap).find(key => areaName.toLowerCase().includes(key.toLowerCase()));
+    if (foundKey) {
+      target = coordsMap[foundKey];
+    } else {
+      // Fallback coordinates near the center
+      target = { cx: 380 + Math.random() * 40, cy: 260 + Math.random() * 40 };
+    }
+  }
 
   const start = { cx: 400, cy: 300 }; // central hub
 
@@ -1533,4 +1310,301 @@ function animateDudeTravel(areaName) {
   }
 
   requestAnimationFrame(step);
+}
+
+// ==========================================================================
+// GOOGLE MAPS & OFFLINE MOCK MAP INTEGRATION
+// ==========================================================================
+
+let googleMap = null;
+let googleMarker = null;
+let autocomplete = null;
+
+const MOCK_LOCATIONS = [
+  { name: "Indiranagar, Bengaluru", lat: 12.9719, lng: 77.6412 },
+  { name: "Koramangala, Bengaluru", lat: 12.9352, lng: 77.6244 },
+  { name: "HSR Layout, Bengaluru", lat: 12.9105, lng: 77.6450 },
+  { name: "Whitefield, Bengaluru", lat: 12.9698, lng: 77.7499 },
+  { name: "Hebbal, Bengaluru", lat: 13.0354, lng: 77.5988 },
+  { name: "Yeshwanthpur, Bengaluru", lat: 13.0250, lng: 77.5462 },
+  { name: "MG Road, Bengaluru", lat: 12.9738, lng: 77.6119 }
+];
+
+function loadGoogleMapsScript(apiKey) {
+  const oldScript = document.getElementById("google-maps-script");
+  if (oldScript) oldScript.remove();
+
+  window.google = undefined;
+
+  const script = document.createElement("script");
+  script.id = "google-maps-script";
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+  script.async = true;
+  script.defer = true;
+  script.onload = () => {
+    initGoogleMapPicker();
+  };
+  script.onerror = () => {
+    showToast("❌ Failed to load Google Maps. Please check your API key.");
+    initMockMapPicker();
+  };
+  document.head.appendChild(script);
+}
+
+function initGoogleMapPicker() {
+  const mapContainer = document.getElementById("bounty-map-preview");
+  if (!mapContainer) return;
+
+  mapContainer.innerHTML = "";
+
+  const defaultLat = parseFloat(document.getElementById("bounty-lat").value) || 12.9716;
+  const defaultLng = parseFloat(document.getElementById("bounty-lng").value) || 77.5946;
+  const latLng = { lat: defaultLat, lng: defaultLng };
+
+  try {
+    googleMap = new google.maps.Map(mapContainer, {
+      center: latLng,
+      zoom: 13,
+      disableDefaultUI: true,
+      zoomControl: true,
+      fullscreenControl: false
+    });
+
+    googleMarker = new google.maps.Marker({
+      position: latLng,
+      map: googleMap,
+      draggable: true,
+      title: "Drag me to adjust the location"
+    });
+
+    const input = document.getElementById("bounty-location-input");
+    autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "in" },
+      fields: ["geometry", "name", "formatted_address"]
+    });
+
+    autocomplete.bindTo("bounds", googleMap);
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (!place.geometry || !place.geometry.location) {
+        return;
+      }
+
+      if (place.geometry.viewport) {
+        googleMap.fitBounds(place.geometry.viewport);
+      } else {
+        googleMap.setCenter(place.geometry.location);
+        googleMap.setZoom(16);
+      }
+      googleMarker.setPosition(place.geometry.location);
+
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const address = place.formatted_address || place.name;
+      
+      document.getElementById("bounty-lat").value = lat.toFixed(6);
+      document.getElementById("bounty-lng").value = lng.toFixed(6);
+    });
+
+    googleMarker.addListener("dragend", () => {
+      const position = googleMarker.getPosition();
+      const lat = position.lat();
+      const lng = position.lng();
+      
+      document.getElementById("bounty-lat").value = lat.toFixed(6);
+      document.getElementById("bounty-lng").value = lng.toFixed(6);
+
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        let address = `Custom Pin at (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        if (status === "OK" && results[0]) {
+          address = results[0].formatted_address;
+        }
+        document.getElementById("bounty-location-input").value = address;
+      });
+    });
+  } catch (err) {
+    console.error("Error loading Google Maps map picker", err);
+    initMockMapPicker();
+  }
+}
+
+function initMockMapPicker() {
+  const mapContainer = document.getElementById("bounty-map-preview");
+  if (!mapContainer) return;
+
+  mapContainer.innerHTML = `
+    <div style="position: absolute; inset: 0; background: var(--surface-container-low); display: flex; flex-direction: column;">
+      <svg id="mock-picker-svg" viewBox="0 0 400 180" style="width:100%; height:100%; background: #121212; cursor: crosshair; user-select: none;">
+        <defs>
+          <pattern id="mock-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#mock-grid)"/>
+        
+        <circle cx="200" cy="90" r="60" fill="none" stroke="rgba(204, 90, 55, 0.08)" stroke-width="2" stroke-dasharray="4 4"/>
+        <circle cx="200" cy="90" r="30" fill="none" stroke="rgba(204, 90, 55, 0.08)" stroke-width="2" stroke-dasharray="4 4"/>
+        
+        <path d="M 50 90 L 350 90" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1.5"/>
+        <path d="M 200 10 L 200 170" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1.5"/>
+        
+        <text x="310" y="80" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Whitefield</text>
+        <text x="230" y="135" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Koramangala</text>
+        <text x="240" y="65" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Indiranagar</text>
+        <text x="290" y="150" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">HSR Layout</text>
+        <text x="140" y="40" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Hebbal</text>
+        <text x="100" y="105" fill="rgba(255,255,255,0.25)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Yeshwanthpur</text>
+        
+        <text x="200" y="170" fill="rgba(255, 255, 255, 0.35)" font-size="8px" font-family="Plus Jakarta Sans" text-anchor="middle">Click or drag pin to adjust coordinates</text>
+        
+        <g id="mock-picker-pin" transform="translate(200, 90)" style="cursor: grab;">
+          <circle cx="0" cy="0" r="10" fill="rgba(204, 90, 55, 0.25)">
+            <animate attributeName="r" values="8;15;8" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <path d="M 0 0 C -4 -4 -6 -10 0 -16 C 6 -10 4 -4 0 0 Z" fill="#cc5a37" stroke="#ffffff" stroke-width="1"/>
+          <circle cx="0" cy="-11" r="2.5" fill="#ffffff"/>
+        </g>
+      </svg>
+      <div style="background: rgba(15,15,15,0.9); padding: 5px 10px; font-size: 9px; color: var(--text-secondary); display: flex; justify-content: space-between; border-top: 1px solid var(--outline-variant); font-family: monospace;">
+        <span>Lat: <strong id="mock-lat-display" style="color: var(--primary);">12.9716</strong>, Lng: <strong id="mock-lng-display" style="color: var(--primary);">77.5946</strong></span>
+        <span style="color: var(--primary); font-weight: bold; font-family: 'Plus Jakarta Sans'; font-size: 8px; text-transform: uppercase;">Mock Map Fallback</span>
+      </div>
+    </div>
+  `;
+
+  const svg = document.getElementById("mock-picker-svg");
+  const pin = document.getElementById("mock-picker-pin");
+  if (!svg || !pin) return;
+
+  const latDisplay = document.getElementById("mock-lat-display");
+  const lngDisplay = document.getElementById("mock-lng-display");
+
+  const svgToCoords = (x, y) => {
+    const latMin = 12.88;
+    const latMax = 13.06;
+    const lngMin = 77.48;
+    const lngMax = 77.78;
+
+    const lat = latMax - (y / 180) * (latMax - latMin);
+    const lng = lngMin + (x / 400) * (lngMax - lngMin);
+    return { lat, lng };
+  };
+
+  const coordsToSvg = (lat, lng) => {
+    const latMin = 12.88;
+    const latMax = 13.06;
+    const lngMin = 77.48;
+    const lngMax = 77.78;
+
+    const x = ((lng - lngMin) / (lngMax - lngMin)) * 400;
+    const y = ((latMax - lat) / (latMax - latMin)) * 180;
+    return { x, y };
+  };
+
+  const initialLat = parseFloat(document.getElementById("bounty-lat").value) || 12.9716;
+  const initialLng = parseFloat(document.getElementById("bounty-lng").value) || 77.5946;
+  const initPos = coordsToSvg(initialLat, initialLng);
+  pin.setAttribute("transform", `translate(${initPos.x}, ${initPos.y})`);
+  latDisplay.textContent = initialLat.toFixed(4);
+  lngDisplay.textContent = initialLng.toFixed(4);
+
+  let isDragging = false;
+
+  const getSVGClickPoint = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const x = ((clientX - rect.left) / rect.width) * 400;
+    const y = ((clientY - rect.top) / rect.height) * 180;
+    
+    return {
+      x: Math.max(0, Math.min(400, x)),
+      y: Math.max(0, Math.min(180, y))
+    };
+  };
+
+  const updatePinPosition = (x, y, manualGeocode = true) => {
+    pin.setAttribute("transform", `translate(${x}, ${y})`);
+    const { lat, lng } = svgToCoords(x, y);
+    
+    latDisplay.textContent = lat.toFixed(4);
+    lngDisplay.textContent = lng.toFixed(4);
+    
+    document.getElementById("bounty-lat").value = lat.toFixed(6);
+    document.getElementById("bounty-lng").value = lng.toFixed(6);
+    
+    if (manualGeocode) {
+      let closest = null;
+      let minDist = Infinity;
+      MOCK_LOCATIONS.forEach(loc => {
+        const d = Math.hypot(loc.lat - lat, loc.lng - lng);
+        if (d < minDist) {
+          minDist = d;
+          closest = loc;
+        }
+      });
+
+      const input = document.getElementById("bounty-location-input");
+      if (minDist < 0.02) {
+        input.value = `Near ${closest.name.split(",")[0]}, Bengaluru (Adjusted Pin)`;
+      } else {
+        input.value = `Custom Pin at (${lat.toFixed(4)}, ${lng.toFixed(4)}), Bengaluru`;
+      }
+    }
+  };
+
+  const startDrag = (e) => {
+    isDragging = true;
+    pin.style.cursor = "grabbing";
+    e.preventDefault();
+  };
+
+  const drag = (e) => {
+    if (!isDragging) return;
+    const { x, y } = getSVGClickPoint(e);
+    updatePinPosition(x, y, true);
+    e.preventDefault();
+  };
+
+  const endDrag = () => {
+    isDragging = false;
+    pin.style.cursor = "grab";
+  };
+
+  svg.addEventListener("click", (e) => {
+    if (e.target === pin || pin.contains(e.target)) return;
+    const { x, y } = getSVGClickPoint(e);
+    updatePinPosition(x, y, true);
+  });
+
+  pin.addEventListener("mousedown", startDrag);
+  window.addEventListener("mousemove", drag);
+  window.addEventListener("mouseup", endDrag);
+
+  pin.addEventListener("touchstart", startDrag, { passive: false });
+  window.addEventListener("touchmove", drag, { passive: false });
+  window.addEventListener("touchend", endDrag);
+
+  const input = document.getElementById("bounty-location-input");
+  
+  let searchTimeout;
+  input.addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const val = input.value.trim().toLowerCase();
+      if (!val) return;
+
+      const matched = MOCK_LOCATIONS.find(loc => loc.name.toLowerCase().includes(val));
+      if (matched) {
+        const pos = coordsToSvg(matched.lat, matched.lng);
+        updatePinPosition(pos.x, pos.y, false);
+        document.getElementById("bounty-lat").value = matched.lat;
+        document.getElementById("bounty-lng").value = matched.lng;
+      }
+    }, 300);
+  });
 }
