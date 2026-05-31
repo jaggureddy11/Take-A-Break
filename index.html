@@ -414,7 +414,12 @@
               <!-- STEP 1: Area & Budget -->
               <div class="wizard-step active" id="wizard-step-1">
                 <div class="form-group">
-                  <label for="bounty-location-input">Preferred Location (Map Selection)</label>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="bounty-location-input" style="margin-bottom: 0;">Preferred Location (Map Selection)</label>
+                    <button type="button" id="btn-use-current-location" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface-container-high); color: var(--primary); font-weight: bold; cursor: pointer; transition: all 0.2s ease;">
+                      📍 Use Current Location
+                    </button>
+                  </div>
                   <div style="position: relative;">
                     <input type="text" id="bounty-location-input" placeholder="Search area, landmark or street in Bengaluru..." required style="width: 100%; padding: 12px 12px 12px 34px; border-radius: var(--radius-sm); border: 1px solid var(--outline-variant); background-color: var(--surface); color: var(--text-primary); font-family: inherit; font-size: inherit;">
                     <span style="position: absolute; left: 10px; top: 12px; font-size: 14px;">🔍</span>

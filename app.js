@@ -1135,6 +1135,13 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const useCurrentLocBtn = document.getElementById("btn-use-current-location");
+  if (useCurrentLocBtn) {
+    useCurrentLocBtn.addEventListener("click", () => {
+      pinMapToCurrentLocation();
+    });
+  }
+
   // Links Routing
   document.getElementById("btn-header-bounty").addEventListener("click", () => {
     setRole("seeker", { pinCurrentLocation: true });
