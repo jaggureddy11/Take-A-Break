@@ -249,10 +249,11 @@ function renderLandingBounties() {
       statusText = "Verified";
     }
 
+    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
     item.innerHTML = `
       <div class="bounty-info-block">
         <span class="bounty-loc-badge">
-          📍 ${b.area} 
+          📍 ${displayArea} 
           <span class="bounty-loc-tag">${b.roomType}</span>
         </span>
         <span class="bounty-specs">Budget: ₹${b.budget.toLocaleString()} | Seeker: ${b.seekerName}</span>
@@ -279,14 +280,13 @@ function renderLandingBounties() {
 // Setup Map interaction
 function setupInteractiveMap() {
   const nodes = document.querySelectorAll(".map-node");
-  const areaSelect = document.getElementById("bounty-area");
 
   nodes.forEach(node => {
     node.addEventListener("click", () => {
       const area = node.dataset.area;
       showToast(`Selected area: ${area}`);
-      if (areaSelect) {
-        areaSelect.value = area;
+      if (window.addAreaTagGlobal) {
+        window.addAreaTagGlobal(area);
       }
       // Route to seeker dashboard to complete post
       setRole("seeker");
@@ -324,10 +324,11 @@ function renderSeekerBounties() {
       statusText = "Completed";
     }
 
+    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
     card.innerHTML = `
       <div class="bounty-card-header">
         <div>
-          <h4>📍 ${b.area}</h4>
+          <h4>📍 ${displayArea}</h4>
           <span class="bounty-specs">${b.roomType} | Budget: ₹${b.budget.toLocaleString()}</span>
         </div>
         <span class="bounty-status-label ${statusClass}">${statusText}</span>
@@ -363,8 +364,8 @@ function openSeekerChat(bountyId) {
   hub.style.display = "flex";
   
   // Header details
-  document.getElementById("chat-dude-name").innerText = bounty.dudeName || "Dude System";
-  document.getElementById("chat-bounty-details").innerText = `${bounty.area} PG Bounty - Budget ₹${bounty.budget.toLocaleString()}`;
+  const displayArea = Array.isArray(bounty.area) ? bounty.area.join(" / ") : bounty.area;
+  document.getElementById("chat-bounty-details").innerText = `${displayArea} PG Bounty - Budget ₹${bounty.budget.toLocaleString()}`;
   
   const statusBadge = document.getElementById("chat-status-badge");
   statusBadge.className = "hub-status-badge";
@@ -465,7 +466,12 @@ function renderChatHistory(chatArray, elementId, viewerRole) {
 document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   e.preventDefault();
   
-  const area = document.getElementById("bounty-area").value;
+  const areasStr = document.getElementById("bounty-areas-hidden").value;
+  if (!areasStr) {
+    showToast("⚠️ Please select at least one preferred location.");
+    return;
+  }
+  const area = areasStr.split(",");
   const budget = parseInt(document.getElementById("bounty-budget").value);
   const deposit = parseInt(document.getElementById("bounty-deposit").value);
   const roomType = document.getElementById("bounty-room-type").value;
@@ -525,6 +531,11 @@ document.getElementById("post-bounty-form").addEventListener("submit", (e) => {
   document.querySelectorAll("#gender-segmented .segment-btn").forEach(btn => btn.classList.remove("active"));
   document.querySelector("#gender-segmented .segment-btn[data-value='Any']").classList.add("active");
   document.getElementById("bounty-gender-pref").value = "Any";
+
+  // Reset selected tags UI
+  if (window.clearAreaTagsGlobal) {
+    window.clearAreaTagsGlobal();
+  }
   
   // Reset Wizard Steps
   document.getElementById("wizard-step-3").classList.remove("active");
@@ -626,7 +637,7 @@ function renderDudeBoard() {
     card.innerHTML = `
       <div class="bounty-card-header" style="width:100%;">
         <div>
-          <h4>📍 ${b.area}</h4>
+          <h4>📍 ${Array.isArray(b.area) ? b.area.join(" / ") : b.area}</h4>
           <span class="bounty-specs">${b.roomType} | Budget: ₹${b.budget.toLocaleString()}</span>
         </div>
         <span class="dude-bounty-payout">Payout: ₹400</span>
@@ -675,7 +686,8 @@ function renderDudeBoard() {
   if (activeJob) {
     activeHub.style.display = "flex";
     selectedBountyId = activeJob.id;
-    document.getElementById("active-job-title").innerText = `Active Job: ${activeJob.area} PG Verification`;
+    const displayArea = Array.isArray(activeJob.area) ? activeJob.area.join(" / ") : activeJob.area;
+    document.getElementById("active-job-title").innerText = `Active Job: ${displayArea} PG Verification`;
     document.getElementById("active-job-budget").innerText = `Seeker: ${activeJob.seekerName} | Budget: ₹${activeJob.budget.toLocaleString()} | Deposit: ${activeJob.deposit} Months`;
     
     // Render active accepted job requirements
@@ -739,7 +751,8 @@ function acceptDudeTask(bountyId) {
   showToast(`Accepted bounty task ${bountyId}. Heading to ground location.`);
   
   // Trigger Map Scooter Animation
-  animateDudeTravel(bounty.area);
+  const travelArea = Array.isArray(bounty.area) ? bounty.area[0] : bounty.area;
+  animateDudeTravel(travelArea);
 
   // Simulate Dude arrival after 3 seconds
   setTimeout(() => {
@@ -846,6 +859,7 @@ function renderAdminPanel() {
       platformRevenue += 99;
     }
 
+    const displayArea = Array.isArray(b.area) ? b.area.join(" / ") : b.area;
     const tr = document.createElement("tr");
     
     let statusText = "Pending Assignment";
@@ -870,7 +884,7 @@ function renderAdminPanel() {
 
     tr.innerHTML = `
       <td><strong>${b.id}</strong></td>
-      <td>📍 ${b.area}</td>
+      <td>📍 ${displayArea}</td>
       <td>₹${b.budget.toLocaleString()}</td>
       <td>${b.seekerName}</td>
       <td>${b.dudeName || '<span style="color:var(--text-muted);">None</span>'}</td>
@@ -916,6 +930,9 @@ window.addEventListener("DOMContentLoaded", () => {
   // Setup area click
   setupInteractiveMap();
 
+  // Setup location autocomplete tag input
+  setupLocationAutocomplete();
+
   // Load Bounties feed
   renderLandingBounties();
 
@@ -939,17 +956,191 @@ window.addEventListener("DOMContentLoaded", () => {
     setRole("visitor");
   });
 
-  document.getElementById("hero-cta-post").addEventListener("click", () => {
-    setRole("seeker");
-  });
+  const heroPost = document.getElementById("hero-cta-post");
+  if (heroPost) {
+    heroPost.addEventListener("click", () => {
+      setRole("seeker");
+    });
+  }
 
-  document.getElementById("hero-cta-dude").addEventListener("click", () => {
-    setRole("dude");
-  });
+  const heroDude = document.getElementById("hero-cta-dude");
+  if (heroDude) {
+    heroDude.addEventListener("click", () => {
+      setRole("dude");
+    });
+  }
 
   // Setup Seeker Bounty Wizard
   setupBountyWizard();
+
+  // Setup NoBroker Landing Page search console controls
+  setupLandingSearchConsole();
+
+  // Load saved Google Maps API key on start
+  const savedKey = localStorage.getItem("tab_gmaps_key");
+  if (savedKey) {
+    loadGoogleMapsAPI(savedKey);
+    const keyInput = document.getElementById("admin-gmaps-key");
+    if (keyInput) keyInput.value = savedKey;
+  }
+
+  // Save Google Maps API Key handler
+  const saveKeyBtn = document.getElementById("btn-save-gmaps-key");
+  if (saveKeyBtn) {
+    saveKeyBtn.addEventListener("click", () => {
+      const keyInput = document.getElementById("admin-gmaps-key");
+      const key = keyInput ? keyInput.value.trim() : "";
+      if (key) {
+        localStorage.setItem("tab_gmaps_key", key);
+        loadGoogleMapsAPI(key);
+        showToast("💾 Google Maps API Key saved and loading script...");
+      } else {
+        localStorage.removeItem("tab_gmaps_key");
+        showToast("🗑️ Google Maps API Key removed. Using offline fallback.");
+      }
+    });
+  }
 });
+
+function loadGoogleMapsAPI(key) {
+  if (!key) return;
+  const scriptId = "google-maps-places-script";
+  if (document.getElementById(scriptId)) return; // already loading
+
+  const script = document.createElement("script");
+  script.id = scriptId;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=initGoogleMapsAutocomplete`;
+  script.async = true;
+  script.defer = true;
+  script.onerror = () => {
+    showToast("❌ Failed to load Google Maps API. Check your key/connection.");
+  };
+  document.head.appendChild(script);
+}
+
+window.initGoogleMapsAutocomplete = () => {
+  console.log("Google Maps Places API loaded successfully!");
+  showToast("✅ Google Maps Places API loaded.");
+};
+
+function setupLandingSearchConsole() {
+  const citySelector = document.querySelector(".city-selector");
+  const cityDropdown = document.getElementById("landing-city-dropdown");
+  const selectedCitySpan = document.getElementById("landing-selected-city");
+  
+  if (citySelector && cityDropdown && selectedCitySpan) {
+    citySelector.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isVisible = cityDropdown.style.display === "block";
+      cityDropdown.style.display = isVisible ? "none" : "block";
+    });
+    
+    document.querySelectorAll(".city-option").forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedCitySpan.textContent = opt.textContent;
+        cityDropdown.style.display = "none";
+        showToast(`City set to: ${opt.textContent}`);
+      });
+    });
+    
+    document.addEventListener("click", () => {
+      cityDropdown.style.display = "none";
+    });
+  }
+
+  // Search Tabs logic
+  document.querySelectorAll(".search-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".search-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      
+      const tabVal = tab.getAttribute("data-tab");
+      const occupancyRadios = document.getElementById("landing-occupancy-options");
+      
+      if (tabVal === "pg") {
+        if (occupancyRadios) occupancyRadios.style.display = "flex";
+        const radioSingle = document.querySelector('input[name="landing-occupancy"][value="Single Room"]');
+        if (radioSingle) radioSingle.checked = true;
+      } else if (tabVal === "flatmates") {
+        if (occupancyRadios) occupancyRadios.style.display = "flex";
+        const radioFlatmate = document.querySelector('input[name="landing-occupancy"][value="Flatmate (Private)"]');
+        if (radioFlatmate) radioFlatmate.checked = true;
+      } else if (tabVal === "fullhouse") {
+        if (occupancyRadios) occupancyRadios.style.display = "flex";
+        const radioSingle = document.querySelector('input[name="landing-occupancy"][value="Single Room"]');
+        if (radioSingle) radioSingle.checked = true;
+      }
+    });
+  });
+
+  // Search button action
+  const searchBtn = document.getElementById("btn-landing-search");
+  if (searchBtn) {
+    searchBtn.addEventListener("click", () => {
+      const locations = document.getElementById("landing-bounty-areas-hidden").value;
+      if (!locations) {
+        showToast("⚠️ Please select at least one preferred location.");
+        return;
+      }
+      
+      const occupancyVal = document.querySelector('input[name="landing-occupancy"]:checked').value;
+      const genderVal = document.getElementById("landing-gender").value;
+      const budgetVal = document.getElementById("landing-budget").value;
+      
+      // Route to seeker dashboard
+      setRole("seeker");
+      
+      // Update wizard fields
+      const wizardHiddenInput = document.getElementById("bounty-areas-hidden");
+      if (wizardHiddenInput) {
+        wizardHiddenInput.value = locations;
+        selectedAreas = locations.split(",");
+        if (window.updateAreaTagsUI) {
+          window.updateAreaTagsUI();
+        }
+      }
+      
+      const wizardBudgetInput = document.getElementById("bounty-budget");
+      if (wizardBudgetInput) wizardBudgetInput.value = budgetVal;
+      
+      const wizardDepositInput = document.getElementById("bounty-deposit");
+      if (wizardDepositInput) wizardDepositInput.value = 2; // default
+      
+      // Segmented control active status updates
+      const wizardOccupancyInput = document.getElementById("bounty-room-type");
+      if (wizardOccupancyInput) {
+        wizardOccupancyInput.value = occupancyVal;
+        document.querySelectorAll("#occupancy-segmented .segment-btn").forEach(btn => {
+          btn.classList.remove("active");
+          if (btn.getAttribute("data-value") === occupancyVal) btn.classList.add("active");
+        });
+      }
+      
+      const wizardGenderInput = document.getElementById("bounty-gender-pref");
+      if (wizardGenderInput) {
+        wizardGenderInput.value = genderVal;
+        document.querySelectorAll("#gender-segmented .segment-btn").forEach(btn => {
+          btn.classList.remove("active");
+          if (btn.getAttribute("data-value") === genderVal) btn.classList.add("active");
+        });
+      }
+      
+      // Advance to Step 2
+      const step1 = document.getElementById("wizard-step-1");
+      const step2 = document.getElementById("wizard-step-2");
+      const dot2 = document.getElementById("wizard-dot-2");
+      
+      if (step1 && step2 && dot2) {
+        step1.classList.remove("active");
+        step2.classList.add("active");
+        dot2.classList.add("active");
+      }
+      
+      showToast("🔍 Preferred locations loaded! Customize your verification tasks.");
+    });
+  }
+}
 
 // ==========================================================================
 // INTERACTIVE MULTI-STEP BOUNTY WIZARD & SCOOTER TRAVEL TIMELINE ANIMATOR
@@ -998,12 +1189,12 @@ function setupBountyWizard() {
 
   next1.addEventListener("click", () => {
     // Validate Step 1 Inputs
-    const area = document.getElementById("bounty-area").value;
+    const area = document.getElementById("bounty-areas-hidden").value;
     const budget = document.getElementById("bounty-budget").value;
     const deposit = document.getElementById("bounty-deposit").value;
 
     if (!area || !budget || !deposit) {
-      showToast("⚠️ Please fill in the target area, budget, and deposit.");
+      showToast("⚠️ Please select preferred locations, budget, and deposit limit.");
       return;
     }
 
@@ -1029,6 +1220,213 @@ function setupBountyWizard() {
     step2.classList.add("active");
     dot3.classList.remove("active");
   });
+}
+
+// ==========================================================================
+// ==========================================================================
+// AUTOCOMPLETE MULTIPLE LOCATION TAG SELECTOR (NoBroker style)
+// ==========================================================================
+
+const BENGALURU_AREAS = [
+  "Koramangala", "HSR Layout", "Indiranagar", "Whitefield", "Hebbal",
+  "Yeshwanthpur", "Bellandur", "Marathahalli", "BTM Layout", "Jayanagar",
+  "Banashankari", "Electronic City", "Vajarahalli Colony", "JP Nagar",
+  "Sadashivanagar", "Malleshwaram", "Rajajinagar", "Outer Ring Road",
+  "Domlur", "Kalyan Nagar", "RT Nagar", "CV Raman Nagar", "Bannerghatta Road",
+  "MG Road", "Ulsoor", "Frazer Town", "Richards Town", "Cooke Town",
+  "Benson Town", "Vasanth Nagar", "Cunningham Road", "Lavelle Road",
+  "Kasturi Nagar", "HRBR Layout", "Hennur", "Kammanahalli", "Kothanur",
+  "Thanisandra", "Jakkur", "Yelahanka", "Sahakar Nagar", "Sanjay Nagar",
+  "New BEL Road", "Mathikere", "Gokula", "Vidyaranyapura", "Peenya",
+  "Nagasandra", "Chandra Layout", "Vijayangar", "Basaveshwaranagar",
+  "Mahalakshmi Layout", "Nagarbhavi", "Kengeri", "RR Nagar", "Uttarahalli",
+  "Padmanabhanagar", "Kumaraswamy Layout", "ISRO Layout", "Kanakapura Road",
+  "Anjanapura", "Giri Nagar", "Srinagar", "Basavanagudi", "Hanumantha Nagar",
+  "Chamarajpet", "Gandhi Nagar", "Majestic", "Chickpet", "Kalasipalyam",
+  "Wilson Garden", "Sudhama Nagar", "Shanti Nagar", "Richmond Town",
+  "Langford Town", "Victoria Layout", "Austin Town", "Ejipura", "Adugodi",
+  "Madivala", "Tavarekere", "Bommanahalli", "Singasandra", "Begur",
+  "Hulimavu", "Arekere", "Gottigere", "Doddanekundi", "Kadugodi",
+  "Hoodi", "Varthur", "Brookefield", "Kundalahalli", "Munnekollal",
+  "Panathur", "Kadubeesanahalli", "Devarabeesanahalli", "Sarjapur Road",
+  "Kasavanahalli", "Haralur", "Halanayakanahalli", "Carmelaram", "Gunjur",
+  "Vajarahalli", "Talaghattapura", "Kaggalipura"
+];
+
+let selectedAreas = [];
+
+// Get local offline suggestions
+function getLocalSuggestions(query) {
+  return BENGALURU_AREAS.filter(area => 
+    area.toLowerCase().includes(query.toLowerCase()) && !selectedAreas.includes(area)
+  );
+}
+
+// Fetch from OSM Nominatim
+async function getOSMSuggestions(query) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&viewbox=77.3,12.7,77.9,13.2&bounded=1&limit=6`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept-Language': 'en'
+      }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.map(item => {
+      const parts = item.display_name.split(',');
+      return parts[0].trim();
+    }).filter(name => name.length > 2);
+  } catch (e) {
+    console.error("OSM Nominatim error:", e);
+    return [];
+  }
+}
+
+// Fetch suggestions from available service (Google or Fallbacks)
+async function fetchSuggestions(query, callback) {
+  // 1. Google Places Autocomplete if key is loaded
+  if (window.google && google.maps && google.maps.places) {
+    if (!window.gmapsAutocompleteService) {
+      window.gmapsAutocompleteService = new google.maps.places.AutocompleteService();
+    }
+    window.gmapsAutocompleteService.getPlacePredictions({
+      input: query,
+      componentRestrictions: { country: 'in' },
+      locationBias: { radius: 25000, center: { lat: 12.9716, lng: 77.5946 } }
+    }, (predictions, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+        const results = predictions.map(p => p.structured_formatting.main_text);
+        const filtered = [...new Set(results)].filter(item => !selectedAreas.includes(item));
+        callback(filtered);
+      } else {
+        callback(getLocalSuggestions(query));
+      }
+    });
+    return;
+  }
+
+  // 2. Hybrid Fallback (Local instant + OSM Nominatim background)
+  const localMatches = getLocalSuggestions(query);
+  callback(localMatches);
+
+  if (query.length > 2) {
+    const osmMatches = await getOSMSuggestions(query);
+    if (osmMatches.length > 0) {
+      const merged = [...new Set([...localMatches, ...osmMatches])].filter(item => !selectedAreas.includes(item));
+      callback(merged);
+    }
+  }
+}
+
+function setupLocationAutocomplete() {
+  const autocompleteConfigs = [
+    {
+      searchInput: document.getElementById("bounty-location-search"),
+      suggestionsBox: document.getElementById("location-suggestions")
+    },
+    {
+      searchInput: document.getElementById("landing-bounty-location-search"),
+      suggestionsBox: document.getElementById("landing-location-suggestions")
+    }
+  ];
+
+  autocompleteConfigs.forEach(cfg => {
+    const { searchInput, suggestionsBox } = cfg;
+    if (!searchInput || !suggestionsBox) return;
+
+    searchInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim();
+      if (!query) {
+        suggestionsBox.style.display = "none";
+        return;
+      }
+
+      fetchSuggestions(query, (matches) => {
+        if (matches.length === 0) {
+          suggestionsBox.style.display = "none";
+          return;
+        }
+
+        suggestionsBox.innerHTML = "";
+        matches.forEach(area => {
+          const item = document.createElement("div");
+          item.className = "suggestion-item";
+          item.innerText = area;
+          item.addEventListener("click", () => {
+            addAreaTag(area);
+            searchInput.value = "";
+            suggestionsBox.style.display = "none";
+            searchInput.focus();
+          });
+          suggestionsBox.appendChild(item);
+        });
+
+        suggestionsBox.style.display = "block";
+      });
+    });
+
+    // Close on click outside
+    document.addEventListener("click", (e) => {
+      if (e.target !== searchInput && e.target !== suggestionsBox) {
+        suggestionsBox.style.display = "none";
+      }
+    });
+  });
+
+  function addAreaTag(area) {
+    if (selectedAreas.length >= 3) {
+      showToast("⚠️ You can select up to 3 preferred locations.");
+      return;
+    }
+    if (selectedAreas.includes(area)) return;
+
+    selectedAreas.push(area);
+    window.updateAreaTagsUI();
+  }
+
+  function removeAreaTag(area) {
+    selectedAreas = selectedAreas.filter(a => a !== area);
+    window.updateAreaTagsUI();
+  }
+
+  // Update both tag containers
+  window.updateAreaTagsUI = () => {
+    const targets = [
+      { container: document.getElementById("location-selected-tags"), hidden: document.getElementById("bounty-areas-hidden") },
+      { container: document.getElementById("landing-location-selected-tags"), hidden: document.getElementById("landing-bounty-areas-hidden") }
+    ];
+
+    targets.forEach(t => {
+      if (!t.container) return;
+      t.container.innerHTML = "";
+      selectedAreas.forEach(area => {
+        const chip = document.createElement("span");
+        chip.className = "selected-tag-chip";
+        chip.innerHTML = `
+          ${area}
+          <button type="button" class="remove-tag-btn" data-value="${area}">&times;</button>
+        `;
+        chip.querySelector(".remove-tag-btn").addEventListener("click", () => {
+          removeAreaTag(area);
+        });
+        t.container.appendChild(chip);
+      });
+      if (t.hidden) {
+        t.hidden.value = selectedAreas.join(",");
+      }
+    });
+  };
+
+  // Expose global methods
+  window.addAreaTagGlobal = (area) => {
+    addAreaTag(area);
+  };
+
+  window.clearAreaTagsGlobal = () => {
+    selectedAreas = [];
+    window.updateAreaTagsUI();
+  };
 }
 
 function animateDudeTravel(areaName) {
