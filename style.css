@@ -1017,7 +1017,7 @@ input, select, textarea {
 
 #view-seeker .dashboard-sidebar {
   width: 100%;
-  max-width: 680px; /* Comfortable centered premium card width */
+  max-width: 1000px; /* Centered and wide card width */
 }
 
 #view-seeker .dashboard-main {
