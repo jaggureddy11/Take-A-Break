@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TAB (Take A Breath) - Get a Dude. Find a Home.</title>
+  <meta name="description" content="TAB (Take A Breath) is Bengaluru's premier bounty-based PG scouting platform. Hire a local Dude to visit and verify PG rooms, Wi-Fi speed, and amenities.">
+  <!-- Google Fonts: Bricolage Grotesque (headings) and Plus Jakarta Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=17.0">
+  <link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+
+  <!-- Top Role Simulator Switcher -->
+  <div id="role-simulator" class="role-simulator">
+    <div class="simulator-label">
+      <span class="pulse-dot"></span>
+      <strong>ROLE SIMULATOR</strong>
+    </div>
+    <div class="role-buttons">
+      <button class="role-btn active" data-role="visitor" id="btn-role-visitor">Landing Page</button>
+      <button class="role-btn" data-role="seeker" id="btn-role-seeker">Seeker Dashboard</button>
+      <button class="role-btn" data-role="dude" id="btn-role-dude">Dude Dashboard</button>
+      <button class="role-btn" data-role="admin" id="btn-role-admin">Admin Control</button>
+    </div>
+  </div>
+
+  <!-- Main Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#" class="app-logo" id="logo-home">
+        <img src="logo.png" alt="TAB Logo" class="logo-img">
+        <span class="logo-text">TAB.</span>
+      </a>
+      <nav class="main-nav">
+        <ul>
+          <li><a href="#how-it-works" class="nav-link" id="nav-how">How It Works</a></li>
+          <li><a href="#active-bounties" class="nav-link" id="nav-map">Active Dudes Map</a></li>
+          <li><a href="#features" class="nav-link" id="nav-features">Why TAB</a></li>
+        </ul>
+      </nav>
+      <div class="header-ctas">
+        <button class="btn btn-secondary" id="btn-header-dude">Become a Dude</button>
+        <button class="btn btn-primary" id="btn-header-bounty">Post a Bounty</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="toast-container"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <main id="app-container">
+
+    <!-- ============================================== -->
+    <!-- VIEW 1: LANDING PAGE (VISITOR)                 -->
+    <!-- ============================================== -->
+    <section id="view-landing" class="app-view active">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-bg-glow"></div>
+        <div class="hero-content">
+          <div class="hero-badge">⚡ Get a Dude. Find a Home.</div>
+          <h1>Find Your Perfect Bengaluru PG <br><span class="gradient-text">Without Moving a Muscle</span></h1>
+          <p class="hero-subtitle">
+            Can't visit PGs in person due to work or college? Take a breath. Raise a bounty, let a local **Dude** physically inspect rooms, record raw video walkthroughs, and run diagnostics for you.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" id="hero-cta-post">Post a Bounty (Start for ₹499)</button>
+            <button class="btn btn-secondary btn-lg" id="hero-cta-dude">Become a Dude & Earn</button>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-item">
+              <span class="metric-value">4.9/5</span>
+              <span class="metric-label">User Satisfaction</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-value">1,200+</span>
+              <span class="metric-label">PGs Audited</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-value">₹4L+</span>
+              <span class="metric-label">Paid to Dudes</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Bounties Live Map & Feed Section -->
+      <section id="active-bounties" class="bounties-map-section">
+        <div class="section-header">
+          <h2>Active Dude Operations</h2>
+          <p>Your Local Dude, On The Ground. Real-time feed of verification missions across Bengaluru tech and student hubs.</p>
+        </div>
+        <div class="map-bento-grid">
+          <!-- Interactive Map Card -->
+          <div class="bento-card map-card">
+            <div class="card-header">
+              <h3>Live Tracker Map</h3>
+              <span class="live-indicator"><span class="pulse-dot"></span> LIVE DUDES</span>
+            </div>
+            <!-- Bengaluru Interactive SVG Map -->
+            <div class="interactive-map-container">
+              <svg viewBox="0 0 800 600" class="bengaluru-map" id="bglr-svg-map">
+                <!-- Grid Background -->
+                <defs>
+                  <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(204, 90, 55, 0.05)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#map-grid)"/>
+
+                <!-- Connecting Routes -->
+                <path d="M 200 150 Q 300 200 400 180 T 650 250" fill="none" stroke="rgba(204, 90, 55, 0.15)" stroke-width="3" stroke-dasharray="8 4"/>
+                <path d="M 150 450 Q 350 400 450 350 T 600 480" fill="none" stroke="rgba(204, 90, 55, 0.15)" stroke-width="3" stroke-dasharray="8 4"/>
+                <path d="M 400 180 Q 420 300 450 350" fill="none" stroke="rgba(204, 90, 55, 0.15)" stroke-width="3" stroke-dasharray="8 4"/>
+
+                <!-- Area Nodes -->
+                <!-- Indiranagar -->
+                <g class="map-node" data-area="Indiranagar" id="node-indiranagar">
+                  <circle cx="450" cy="200" r="45" class="node-glow"/>
+                  <circle cx="450" cy="200" r="12" class="node-center"/>
+                  <text x="450" y="260" class="node-label">Indiranagar</text>
+                  <circle cx="430" cy="180" r="6" class="dude-dot-pulse"/>
+                </g>
+                <!-- Koramangala -->
+                <g class="map-node" data-area="Koramangala" id="node-koramangala">
+                  <circle cx="420" cy="380" r="50" class="node-glow"/>
+                  <circle cx="420" cy="380" r="12" class="node-center"/>
+                  <text x="420" y="445" class="node-label">Koramangala</text>
+                  <circle cx="440" cy="360" r="6" class="dude-dot-pulse"/>
+                  <circle cx="400" cy="400" r="6" class="dude-dot-pulse"/>
+                </g>
+                <!-- HSR Layout -->
+                <g class="map-node" data-area="HSR Layout" id="node-hsr">
+                  <circle cx="580" cy="450" r="45" class="node-glow"/>
+                  <circle cx="580" cy="450" r="12" class="node-center"/>
+                  <text x="580" y="510" class="node-label">HSR Layout</text>
+                  <circle cx="565" cy="440" r="6" class="dude-dot-pulse"/>
+                </g>
+                <!-- Whitefield -->
+                <g class="map-node" data-area="Whitefield" id="node-whitefield">
+                  <circle cx="700" cy="220" r="40" class="node-glow"/>
+                  <circle cx="700" cy="220" r="12" class="node-center"/>
+                  <text x="700" y="280" class="node-label">Whitefield</text>
+                </g>
+                <!-- Hebbal / North -->
+                <g class="map-node" data-area="Hebbal" id="node-hebbal">
+                  <circle cx="250" cy="120" r="40" class="node-glow"/>
+                  <circle cx="250" cy="120" r="12" class="node-center"/>
+                  <text x="250" y="180" class="node-label">Hebbal</text>
+                </g>
+                <!-- Yeshwanthpur -->
+                <g class="map-node" data-area="Yeshwanthpur" id="node-yeshwanthpur">
+                  <circle cx="160" cy="280" r="35" class="node-glow"/>
+                  <circle cx="160" cy="280" r="12" class="node-center"/>
+                  <text x="160" y="335" class="node-label">Yeshwanthpur</text>
+                </g>
+              </svg>
+              <div class="map-helper-badge">💡 Click an area to dispatch a Dude there directly!</div>
+            </div>
+          </div>
+
+          <!-- Active Bounty Feed List -->
+          <div class="bento-card feed-card">
+            <div class="card-header">
+              <h3>Live Operations Feed</h3>
+              <span class="count-badge" id="live-bounty-count">4 Active</span>
+            </div>
+            <div class="bounties-list" id="landing-bounties-list">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Bento Grid -->
+      <section id="features" class="features-section">
+        <div class="section-header">
+          <h2>Need a PG? Ask a Dude.</h2>
+          <p>Dudes Know the City Better. No fake reviews, just objective ground truth.</p>
+        </div>
+        <div class="features-grid">
+          <!-- Feature 1 -->
+          <div class="bento-card feature-tile">
+            <span class="feature-icon">🏍️</span>
+            <h3>Let a Dude Search For You</h3>
+            <p>Your assigned Dude travels to the exact PG coordinates to double-check water pressure, security, and food.</p>
+          </div>
+          <!-- Feature 2 -->
+          <div class="bento-card feature-tile">
+            <span class="feature-icon">📶</span>
+            <h3>Wi-Fi Speed Diagnostics</h3>
+            <p>Dudes run direct router speed tests in the room so you're guaranteed a smooth work-from-home setup.</p>
+          </div>
+          <!-- Feature 3 -->
+          <div class="bento-card feature-tile">
+            <span class="feature-icon">🍲</span>
+            <h3>Mess Meal Quality Check</h3>
+            <p>Dudes audit kitchen hygiene, snap raw dinner photos, and verify meal quality first-hand.</p>
+          </div>
+          <!-- Feature 4 -->
+          <div class="bento-card feature-tile">
+            <span class="feature-icon">🔒</span>
+            <h3>Razorpay Escrow Protection</h3>
+            <p>Your ₹499 sits secure. Dudes are paid only after you approve their uploaded walkthrough report.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Chat Simulator Section -->
+      <section class="simulator-section">
+        <div class="simulator-grid">
+          <div class="simulator-info">
+            <h2>Real-Time Ground Updates</h2>
+            <p>Watch how Dudes communicate with seekers directly. High-resolution videos, room details, and maps are shared dynamically, helping seekers make decisions in minutes.</p>
+            <div class="flow-steps">
+              <div class="step-item">
+                <span class="step-number">1</span>
+                <div>
+                  <strong>Dude Arrives:</strong> Shared location pin and room check.
+                </div>
+              </div>
+              <div class="step-item">
+                <span class="step-number">2</span>
+                <div>
+                  <strong>Diagnostics Upload:</strong> Speed test, food photo, washroom video.
+                </div>
+              </div>
+              <div class="step-item">
+                <span class="step-number">3</span>
+                <div>
+                  <strong>Bounty Released:</strong> Seeker approves and payment is disbursed.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone Mockup Chat Screen -->
+          <div class="phone-mockup-wrapper">
+            <div class="phone-case">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="phone-header">
+                  <div class="dude-avatar">🕵️‍♂️</div>
+                  <div class="phone-header-info">
+                    <span class="dude-name">Rahul (Your Dude)</span>
+                    <span class="dude-status"><span class="pulse-dot"></span> Visiting PG near Indiranagar</span>
+                  </div>
+                </div>
+                <div class="phone-chat-body" id="sim-chat-box">
+                  <!-- JS will dynamically type messages here -->
+                </div>
+                <div class="phone-footer">
+                  <div class="chat-input-placeholder">Message Rahul...</div>
+                  <button class="chat-send-btn">➔</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it Works for Seeker vs Dude -->
+      <section id="how-it-works" class="how-works-section">
+        <div class="section-header">
+          <h2>How the Platform Operates</h2>
+          <p>A transparent, commission-protected workflow for seekers and dudes.</p>
+        </div>
+        <div class="how-works-grid">
+          <!-- Seekers -->
+          <div class="bento-card split-how">
+            <div class="how-tag seeker-tag">For PG Seekers</div>
+            <ol class="how-list">
+              <li>
+                <strong>Post preferences:</strong> List location, budget, washroom type, and key items to inspect.
+              </li>
+              <li>
+                <strong>Raise Escrow Bounty:</strong> Deposit ₹499 secure payment (holds on Razorpay Route).
+              </li>
+              <li>
+                <strong>Inspect Live:</strong> Chat with your assigned Dude, review room videos, and run Wi-Fi tests.
+              </li>
+              <li>
+                <strong>Book or Reject:</strong> If satisfied, release the funds. If details don't match, reject and get a refund.
+              </li>
+            </ol>
+          </div>
+          <!-- Dudes -->
+          <div class="bento-card split-how">
+            <div class="how-tag dude-tag">For Local Dudes</div>
+            <ol class="how-list">
+              <li>
+                <strong>Browse Available Tasks:</strong> See list of open PG verification tasks near you.
+              </li>
+              <li>
+                <strong>Accept & Travel:</strong> Accept the job, travel to the PG in your sector.
+              </li>
+              <li>
+                <strong>Conduct Audit:</strong> Record raw videos, measure Wi-Fi bandwidth, audit rules, chat with seeker.
+              </li>
+              <li>
+                <strong>Collect ₹400 Payout:</strong> Submit the verification report. Once approved, ₹400 transfers directly to your bank account.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Testimonial Section -->
+      <section class="testimonials-section">
+        <div class="section-header">
+          <h2>Bengaluru Relocation Stories</h2>
+          <p>How newcomers navigated the PG hunt using Dudes.</p>
+        </div>
+        <div class="testimonials-grid">
+          <div class="bento-card testimonial-card">
+            <p class="quote">"I was moving from Delhi for my tech job. I raised a bounty for HSR Layout Sector 2. My Dude found a PG, tested the Wi-Fi speed (120 Mbps), and recorded a clean video showing the bathroom drainage. Booked it before I landed!"</p>
+            <div class="user-meta">
+              <span class="user-avatar">👩‍💻</span>
+              <div>
+                <strong>Priyanka Sharma</strong>
+                <span class="user-title">Software Engineer, PhonePe</span>
+              </div>
+            </div>
+          </div>
+          <div class="bento-card testimonial-card">
+            <p class="quote">"Between my university schedule at Christ and internships, I couldn't roam Koramangala. Hired a Dude for ₹499. He visited 3 PGs, saved me from one with terrible food, and verified the laundry room. Absolutely worth it."</p>
+            <div class="user-meta">
+              <span class="user-avatar">🧑‍🎓</span>
+              <div>
+                <strong>Aman Hegde</strong>
+                <span class="user-title">Student, Christ University</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive FAQ Section -->
+      <section class="faq-section">
+        <div class="section-header">
+          <h2>Frequently Asked Questions</h2>
+          <p>Everything you need to know about the TAB dude ecosystem.</p>
+        </div>
+        <div class="faq-accordion-container">
+          <details class="faq-item" name="faq" open>
+            <summary>
+              <span class="faq-question">How does the escrow payment system work?</span>
+              <span class="faq-toggle-icon">＋</span>
+            </summary>
+            <div class="faq-content">
+              <p>When you post a bounty, your ₹499 payment is securely held in escrow via Razorpay Route. It is only released to the Dude's bank account after they upload the verification report and you explicitly click <strong>"Release Funds"</strong>. If the PG details do not match or the Dude fails to deliver, you can raise a dispute or claim a refund.</p>
+            </div>
+          </details>
+          
+          <details class="faq-item" name="faq">
+            <summary>
+              <span class="faq-question">Who are the Dudes?</span>
+              <span class="faq-toggle-icon">＋</span>
+            </summary>
+            <div class="faq-content">
+              <p>Dudes are local freelancers, college students, or young professionals living in Bengaluru who know the city well. They are vetted by our platform for identification, communication skills, and safety before they can accept PG verification bounties.</p>
+            </div>
+          </details>
+
+          <details class="faq-item" name="faq">
+            <summary>
+              <span class="faq-question">What specific items will the Dude verify?</span>
+              <span class="faq-toggle-icon">＋</span>
+            </summary>
+            <div class="faq-content">
+              <p>By default, Dudes verify the exact room conditions, take raw video walkthroughs, run local Wi-Fi speed tests, audit mess food quality (ratings + photos), check water pressure/geyser functionality, and confirm the PG's curfew rules. You can also specify custom items in the special notes when posting a bounty.</p>
+            </div>
+          </details>
+
+          <details class="faq-item" name="faq">
+            <summary>
+              <span class="faq-question">Can I ask the Dude to visit multiple PGs?</span>
+              <span class="faq-toggle-icon">＋</span>
+            </summary>
+            <div class="faq-content">
+              <p>Each bounty of ₹499 covers a comprehensive ground inspection of a single PG. If you have 3 different PGs you want verified, you can raise 3 separate bounties. Dudes can accept them individually or in bundles.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 2: SEEKER DASHBOARD                       -->
+    <!-- ============================================== -->
+    <section id="view-seeker" class="app-view">
+      <div class="dashboard-layout">
+        <!-- Sidebar controls & Post Bounty form -->
+        <div class="dashboard-sidebar">
+          <div class="bento-card form-card">
+            <h2>Post a New Bounty</h2>
+            
+            <!-- Multi-step Progress Bar -->
+            <div class="form-steps-indicator">
+              <span class="step-dot active" id="wizard-dot-1">1</span>
+              <span class="step-line"></span>
+              <span class="step-dot" id="wizard-dot-2">2</span>
+              <span class="step-line"></span>
+              <span class="step-dot" id="wizard-dot-3">3</span>
+            </div>
+
+            <form id="post-bounty-form">
+              <!-- STEP 1: Area & Budget -->
+              <div class="wizard-step active" id="wizard-step-1">
+                <div class="form-group">
+                  <label for="bounty-area">Target Area in Bengaluru</label>
+                  <select id="bounty-area" required>
+                    <option value="" disabled selected>Select Area</option>
+                    <option value="Koramangala">Koramangala</option>
+                    <option value="HSR Layout">HSR Layout</option>
+                    <option value="Indiranagar">Indiranagar</option>
+                    <option value="Whitefield">Whitefield</option>
+                    <option value="Hebbal">Hebbal</option>
+                    <option value="Yeshwanthpur">Yeshwanthpur</option>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="bounty-budget">Max Budget (₹/mo)</label>
+                    <input type="number" id="bounty-budget" placeholder="e.g., 15000" min="4000" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="bounty-deposit">Max Deposit (months)</label>
+                    <input type="number" id="bounty-deposit" placeholder="e.g., 2" min="1" max="10" required>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="bounty-room-type">Room Occupancy Type</label>
+                  <select id="bounty-room-type" required>
+                    <option value="Single Room">Single Room</option>
+                    <option value="Double Sharing">Double Sharing</option>
+                    <option value="Triple Sharing">Triple Sharing</option>
+                  </select>
+                </div>
+                
+                <button type="button" class="btn btn-primary btn-block" id="btn-wizard-next-1">Next: Preferences ➔</button>
+              </div>
+
+              <!-- STEP 2: Preferences & Notes -->
+              <div class="wizard-step" id="wizard-step-2">
+                <div class="form-group">
+                  <label>Verification Preferences</label>
+                  <div class="checkbox-grid">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="pref-wifi" checked> Wi-Fi Speed Test
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="pref-food" checked> Food Quality Check
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="pref-washroom" checked> Washroom Walkthrough
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="pref-restriction"> No Curfew/Restrictions
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="bounty-notes">Special Instructions for your Dude</label>
+                  <textarea id="bounty-notes" placeholder="e.g., 'Check if there is power backup, and ask if the balcony faces the main street...'" rows="3"></textarea>
+                </div>
+
+                <div class="wizard-navigation">
+                  <button type="button" class="btn btn-secondary" id="btn-wizard-prev-2">Back</button>
+                  <button type="button" class="btn btn-primary" id="btn-wizard-next-2">Next: Escrow ➔</button>
+                </div>
+              </div>
+
+              <!-- STEP 3: Escrow Preview & Pay -->
+              <div class="wizard-step" id="wizard-step-3">
+                <div class="escrow-preview">
+                  <div class="escrow-row">
+                     <span>Bounty Fee (to Dude):</span>
+                     <strong>₹400</strong>
+                  </div>
+                  <div class="escrow-row">
+                     <span>Platform Fee (Escrow):</span>
+                     <strong>₹99</strong>
+                  </div>
+                  <hr>
+                  <div class="escrow-row total-row">
+                     <span>Total Amount Paid:</span>
+                     <strong>₹499</strong>
+                  </div>
+                  <p class="escrow-note">🔒 Secured by Razorpay Escrow. Funds are released to Dude only after verification approval.</p>
+                </div>
+
+                <div class="wizard-navigation">
+                  <button type="button" class="btn btn-secondary" id="btn-wizard-prev-3">Back</button>
+                  <button type="submit" class="btn btn-primary">Authorize & Post Bounty</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Side: Active Bounties & Chat Console -->
+        <div class="dashboard-main">
+          <!-- Active list -->
+          <div class="bento-card console-card">
+            <div class="card-header">
+              <h2>My Posted Bounties</h2>
+              <span class="count-badge" id="seeker-active-count">0 Active</span>
+            </div>
+            <div class="bounties-grid" id="seeker-bounties-list">
+              <!-- Seeker bounties populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Seeker-Dude Live Communication Hub -->
+          <div class="bento-card communication-hub" id="seeker-chat-hub" style="display: none;">
+            <div class="hub-header">
+              <div class="dude-meta">
+                <span class="dude-avatar-large">🕵️‍♂️</span>
+                <div>
+                  <h3 id="chat-dude-name">Rahul K.</h3>
+                  <p id="chat-bounty-details">Indiranagar PG Bounty - Budget ₹12,000</p>
+                </div>
+              </div>
+              <div class="hub-status-badge status-visiting" id="chat-status-badge">Dude Visiting Live</div>
+            </div>
+
+            <div class="chat-escrow-flow-container" id="escrow-visualization" style="display: none;">
+              <!-- Razorpay Escrow Steps Visualizer -->
+              <div class="escrow-visualizer">
+                <h4>Razorpay Route Escrow Flow</h4>
+                <div class="escrow-steps">
+                  <div class="escrow-step completed" id="step-pay">
+                    <span class="step-dot">✓</span>
+                    <span class="step-title">Payment Authorized</span>
+                    <span class="step-desc">₹499 in Escrow</span>
+                  </div>
+                  <div class="escrow-step" id="step-inspect">
+                    <span class="step-dot">2</span>
+                    <span class="step-title">Dude Inspection</span>
+                    <span class="step-desc">Verification Report</span>
+                  </div>
+                  <div class="escrow-step" id="step-release">
+                    <span class="step-dot">3</span>
+                    <span class="step-title">Escrow Payout</span>
+                    <span class="step-desc">Split Transfer Completed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Report Details Box if uploaded -->
+            <div class="inspection-report-box" id="seeker-report-box" style="display: none;">
+              <h4>📋 Dude's Physical Verification Report</h4>
+              <div class="report-metrics">
+                <div class="report-metric">
+                  <span class="metric-icon">📶</span>
+                  <div>
+                    <strong>Wi-Fi Speed:</strong>
+                    <span id="report-wifi-val">85 Mbps</span>
+                  </div>
+                </div>
+                <div class="report-metric">
+                  <span class="metric-icon">🍲</span>
+                  <div>
+                    <strong>Food Rating:</strong>
+                    <span id="report-food-val">4.5/5 (Good Veg Dinner)</span>
+                  </div>
+                </div>
+                <div class="report-metric">
+                  <span class="metric-icon">📍</span>
+                  <div>
+                    <strong>Google Maps location:</strong>
+                    <a href="#" id="report-map-link" target="_blank">View verified pin</a>
+                  </div>
+                </div>
+              </div>
+              <div class="report-media-gallery" id="report-media-gallery">
+                <!-- Video / Photos dynamically inserted -->
+              </div>
+              <div class="report-actions">
+                <button class="btn btn-success" id="btn-release-funds">Release Funds & Accept PG</button>
+                <button class="btn btn-danger" id="btn-raise-dispute">Raise Dispute / Ask for revision</button>
+              </div>
+            </div>
+
+            <!-- Chat message logs -->
+            <div class="chat-messages-container" id="seeker-chat-messages">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Message input -->
+            <form class="chat-input-form" id="seeker-chat-form">
+              <input type="text" id="seeker-chat-input" placeholder="Type a message to your Dude..." required>
+              <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 3: DUDE DASHBOARD                         -->
+    <!-- ============================================== -->
+    <section id="view-dude" class="app-view">
+      <div class="dashboard-layout">
+        <!-- Dude stats card -->
+        <div class="dashboard-sidebar">
+          <div class="bento-card stats-card">
+            <div class="dude-profile-meta">
+              <div class="dude-big-avatar">🕵️‍♂️</div>
+              <h3>Dude Panel</h3>
+              <p>Active status: <span class="badge-active">Online</span></p>
+            </div>
+            <div class="dude-wallet">
+              <span class="wallet-label">My Unreleased Earnings:</span>
+              <span class="wallet-val" id="dude-wallet-pending">₹0</span>
+              <span class="wallet-label">Total Withdrawn:</span>
+              <span class="wallet-val green" id="dude-wallet-withdrawn">₹3,200</span>
+            </div>
+            <div class="dude-stats-grid">
+              <div class="stat-box">
+                <span class="stat-val" id="dude-stat-completed">8</span>
+                <span class="stat-lbl">Jobs Completed</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-val">98%</span>
+                <span class="stat-lbl">Approval Rate</span>
+              </div>
+            </div>
+            
+            <!-- Top Dude Rankings Sidebar list -->
+            <div class="top-dudes-rankings" style="margin-top:20px; border-top:1px solid var(--outline-variant); padding-top:16px; width:100%; text-align:left;">
+              <h4 style="font-family:'Outfit'; font-size:12px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:10px;">Top Dude Rankings</h4>
+              <div style="font-size:11px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between;"><span>1. Dude Rahul K.</span> <strong>98% Acc</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>2. Priya L.</span> <strong>96% Acc</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span>3. Amit V.</span> <strong>95% Acc</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dude Job Management Console -->
+        <div class="dashboard-main">
+          <!-- Open Bounties list -->
+          <div class="bento-card console-card">
+            <div class="card-header">
+              <h2>Available Tasks</h2>
+              <span class="count-badge" id="dude-open-count">0 Available</span>
+            </div>
+            <p class="dude-guide-text">Select an open task near your location, visit the PG in person, and share verification diagnostics to receive the ₹400 payout.</p>
+            <div class="bounties-grid" id="dude-open-bounties">
+              <!-- Dynamically populated open bounties -->
+            </div>
+          </div>
+
+          <!-- Active accepted job workspace -->
+          <div class="bento-card communication-hub" id="dude-active-job-hub" style="display: none;">
+            <div class="hub-header">
+              <div>
+                <h3 id="active-job-title">Active Job: Indiranagar PG Verification</h3>
+                <p id="active-job-budget">Seeker Budget: ₹12,000 | Deposit: 2 Months</p>
+              </div>
+              <div class="hub-status-badge status-visiting">In Progress</div>
+            </div>
+
+            <!-- Report submission tab -->
+            <div class="bento-card report-submission-form">
+              <h3>Upload Verification Findings</h3>
+              <form id="dude-report-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="dude-report-wifi">Wi-Fi Speed (Mbps)</label>
+                    <input type="number" id="dude-report-wifi" placeholder="e.g. 85" min="1" max="1000" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="dude-report-food">Food Hygiene Rating (1-5)</label>
+                    <select id="dude-report-food" required>
+                      <option value="5">5/5 - Highly Clean & Delicious</option>
+                      <option value="4">4/5 - Clean and Decent Taste</option>
+                      <option value="3">3/5 - Average Hygiene / Basic taste</option>
+                      <option value="2">2/5 - Poor Hygiene</option>
+                      <option value="1">1/5 - Unsatisfactory</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="dude-report-photo">Upload Room Walkthrough Image / Video Link</label>
+                    <select id="dude-report-photo" required>
+                      <option value="room_premium.jpg">Premium Single Room Walkthrough (Standard Mock)</option>
+                      <option value="room_double.jpg">Double Sharing Walkthrough (Standard Mock)</option>
+                      <option value="room_messy.jpg">Economy Room Inspection (Standard Mock)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="dude-report-location">Google Maps verification Link</label>
+                    <input type="text" id="dude-report-location" value="https://maps.google.com/?q=Koramangala+Bengaluru" required>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-block">Submit Verification Report & Request Payout</button>
+              </form>
+            </div>
+
+            <!-- Live chat with seeker -->
+            <div class="chat-messages-container" id="dude-chat-messages">
+              <!-- Chat dynamically populated -->
+            </div>
+
+            <form class="chat-input-form" id="dude-chat-form">
+              <input type="text" id="dude-chat-input" placeholder="Update the PG seeker..." required>
+              <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 4: ADMIN CONTROL PANEL                    -->
+    <!-- ============================================== -->
+    <section id="view-admin" class="app-view">
+      <div class="admin-dashboard">
+        <!-- Admin Statistics Row -->
+        <div class="admin-stats-row">
+          <div class="bento-card admin-stat-card">
+            <h4>Total Bounties Raised</h4>
+            <span class="stat-number" id="admin-total-bounties">12</span>
+            <span class="stat-subtext">Active and completed</span>
+          </div>
+          <div class="bento-card admin-stat-card">
+            <h4>Funds in Escrow</h4>
+            <span class="stat-number" id="admin-escrow-funds">₹499</span>
+            <span class="stat-subtext">Locked by Razorpay Route</span>
+          </div>
+          <div class="bento-card admin-stat-card">
+            <h4>Platform Revenue</h4>
+            <span class="stat-number" id="admin-platform-revenue">₹1,188</span>
+            <span class="stat-subtext">Platform Fee Revenue</span>
+          </div>
+          <div class="bento-card admin-stat-card">
+            <h4>Verified PGs in DB</h4>
+            <span class="stat-number">48</span>
+            <span class="stat-subtext">Bengaluru listings</span>
+          </div>
+        </div>
+
+        <!-- Global Bounty Log Table -->
+        <div class="bento-card admin-log-card">
+          <h2>Global Bounty Transaction Log</h2>
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Bounty ID</th>
+                  <th>Area</th>
+                  <th>Budget</th>
+                  <th>Seeker</th>
+                  <th>Assigned Dude</th>
+                  <th>Status</th>
+                  <th>Razorpay Escrow State</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-bounties-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-brand-logo">
+          <img src="logo.png" alt="TAB Logo" class="logo-img">
+          <h3>TAB (Take A Breath)</h3>
+        </div>
+        <p>Your Local Dude, On The Ground. Direct physical validation of PGs and student accommodations in Bengaluru.</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <h4>Hubs</h4>
+          <ul>
+            <li><a href="#">Koramangala</a></li>
+            <li><a href="#">HSR Layout</a></li>
+            <li><a href="#">Indiranagar</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">Validation Stories</a></li>
+            <li><a href="#">Safety & Escrow</a></li>
+            <li><a href="#">Incubator Grant</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 TAB - Take A Breath. Supported by Bengaluru Student Incubation Hub.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
