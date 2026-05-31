@@ -355,6 +355,13 @@ function renderSeekerBounties() {
   const db = getDB();
   gridEl.innerHTML = "";
 
+  if (!selectedBountyId) {
+    const hub = document.getElementById("seeker-chat-hub");
+    if (hub) hub.style.display = "none";
+    const mainConsole = document.querySelector("#view-seeker .dashboard-main");
+    if (mainConsole) mainConsole.classList.remove("chat-open");
+  }
+
   const seekerBounties = db; // In full MVP, filter by current seeker session
 
   seekerBounties.forEach(b => {
@@ -413,6 +420,9 @@ function openSeekerChat(bountyId) {
   if (!bounty) return;
 
   hub.style.display = "flex";
+
+  const mainConsole = document.querySelector("#view-seeker .dashboard-main");
+  if (mainConsole) mainConsole.classList.add("chat-open");
   
   // Header details
   document.getElementById("chat-dude-name").innerText = bounty.dudeName || "Dude System";
