@@ -1058,17 +1058,14 @@ window.addEventListener("DOMContentLoaded", () => {
   // Load Google Maps API if key is saved, defined in config.js, or exists in .env
   const savedKey = localStorage.getItem("google_maps_api_key");
   const configKey = window.GOOGLE_MAPS_API_KEY;
-  const keyInput = document.getElementById("api-key-input");
   
   if (savedKey) {
-    if (keyInput) keyInput.value = savedKey;
     loadGoogleMapsScript(savedKey);
   } else if (configKey && configKey.trim() !== "") {
     const key = configKey.trim();
-    if (keyInput) keyInput.value = key;
     localStorage.setItem("google_maps_api_key", key);
     loadGoogleMapsScript(key);
-    showToast("🔑 Google Maps API Key loaded from config.js");
+    showToast("🔑 Google Maps API Key loaded");
   } else {
     fetch(".env")
       .then(response => {
@@ -1079,10 +1076,9 @@ window.addEventListener("DOMContentLoaded", () => {
         const match = text.match(/GOOGLE_MAPS_API_KEY\s*=\s*([^\s#\n\r]+)/);
         if (match && match[1]) {
           const key = match[1].trim();
-          if (keyInput) keyInput.value = key;
           localStorage.setItem("google_maps_api_key", key);
           loadGoogleMapsScript(key);
-          showToast("🔑 Google Maps API Key loaded from .env");
+          showToast("🔑 Google Maps API Key loaded");
         } else {
           initMockMapPicker();
         }
@@ -1090,26 +1086,6 @@ window.addEventListener("DOMContentLoaded", () => {
       .catch(err => {
         initMockMapPicker();
       });
-  }
-
-  // Setup save API key button
-  const saveBtn = document.getElementById("btn-save-key");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const keyVal = document.getElementById("api-key-input").value.trim();
-      if (keyVal) {
-        localStorage.setItem("google_maps_api_key", keyVal);
-        showToast("🔑 Google Maps API Key saved! Loading Maps...");
-        loadGoogleMapsScript(keyVal);
-      } else {
-        localStorage.removeItem("google_maps_api_key");
-        showToast("ℹ️ API Key cleared. Reverting to Mock Offline Map.");
-        googleMap = null;
-        googleMarker = null;
-        autocomplete = null;
-        initMockMapPicker();
-      }
-    });
   }
 });
 
