@@ -4,13 +4,9 @@ import { authMiddleware, AuthenticatedRequest } from "../middleware/auth.js";
 
 const router = Router();
 
-// Helper to serialize bounty preference arrays
+// Helper - No array serialization/deserialization required since Postgres supports arrays natively
 const mapBountyOutput = (bounty: any) => {
-  if (!bounty) return null;
-  return {
-    ...bounty,
-    preferences: bounty.preferences ? JSON.parse(bounty.preferences) : [],
-  };
+  return bounty;
 };
 
 // 1. Get all bounties
@@ -113,7 +109,7 @@ router.post(
           roomType,
           genderPref: genderPref || "Any",
           foodPref,
-          preferences: JSON.stringify(preferences || []),
+          preferences: preferences || [],
           notes: notes || "",
           status: "pending",
           seekerId: req.user.id,

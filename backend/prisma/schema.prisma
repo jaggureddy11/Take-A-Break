@@ -1,6 +1,6 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -34,8 +34,8 @@ model Bounty {
   roomType     String
   genderPref   String              @default("Any")
   foodPref     String?
-  preferences  String              // Serialized JSON array for SQLite compatibility
-  notes        String
+  preferences  String[]            // Native Postgres array
+  notes        String              @db.Text
   status       String              @default("pending") // pending, visiting, submitted, completed, disputed
   seekerId     String
   seekerName   String
@@ -72,7 +72,7 @@ model ChatMessage {
   id        String   @id @default(uuid())
   bountyId  String
   sender    String   // "seeker" or "dude"
-  text      String
+  text      String   @db.Text
   time      String   // formatted time string, e.g. "10:35 AM"
   createdAt DateTime @default(now())
 
