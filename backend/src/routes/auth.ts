@@ -20,11 +20,23 @@ router.post("/send-otp", async (req: Request, res: Response): Promise<void> => {
   const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes validation
 
   try {
-    // Upsert user
+    const existingUser = await prisma.user.findUnique({ where: { phone } });
+    let finalRole = role;
+
+    if (existingUser) {
+      // Role is immutable once created to prevent privilege escalation
+      finalRole = existingUser.role;
+    } else if (role === "ADMIN") {
+      // Prevent signing up as ADMIN from the public API route
+      res.status(400).json({ error: "Admin registration is not allowed" });
+      return;
+    }
+
+    // Upsert user safely
     const user = await prisma.user.upsert({
       where: { phone },
-      update: { otp, otpExpiry, role },
-      create: { phone, role, otp, otpExpiry },
+      update: { otp, otpExpiry }, // Do NOT update role on existing users
+      create: { phone, role: finalRole, otp, otpExpiry },
     });
 
     console.log(`\n==============================================`);

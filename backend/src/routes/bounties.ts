@@ -1,6 +1,9 @@
 import { Router, Response } from "express";
+import jwt from "jsonwebtoken";
 import { prisma } from "../config/database.js";
 import { authMiddleware, AuthenticatedRequest } from "../middleware/auth.js";
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-for-tab";
 
 const router = Router();
 
@@ -9,14 +12,78 @@ const mapBountyOutput = (bounty: any) => {
   return bounty;
 };
 
-// 1. Get all bounties
+// 1. Get all bounties (with role-scoped filters and security boundaries)
 router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  let user: { id: string; phone: string; role: string } | null = null;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      user = jwt.verify(token, JWT_SECRET) as {
+        id: string;
+        phone: string;
+        role: string;
+      };
+    } catch (err) {
+      // Treat invalid token as unauthenticated guest
+    }
+  }
+
   try {
-    const bounties = await prisma.bounty.findMany({
+    let bounties;
+
+    if (!user) {
+      // Public / Unauthenticated User
+      bounties = await prisma.bounty.findMany({
+        select: {
+          id: true,
+          area: true,
+          locationName: true,
+          lat: true,
+          lng: true,
+          budgetMin: true,
+          budgetMax: true,
+          depositMin: true,
+          depositMax: true,
+          roomType: true,
+          genderPref: true,
+          status: true,
+          escrowState: true,
+          createdAt: true,
+          bountyType: true,
+          payoutAmount: true,
+          escrowAmount: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      res.json(bounties);
+      return;
+    }
+
+    // Authenticated User
+    let whereClause = {};
+
+    if (user.role === "SEEKER") {
+      whereClause = { seekerId: user.id };
+    } else if (user.role === "DUDE") {
+      whereClause = {
+        OR: [
+          { dudeId: user.id },
+          { status: "pending" }
+        ]
+      };
+    } else if (user.role === "ADMIN") {
+      whereClause = {};
+    }
+
+    const rawBounties = await prisma.bounty.findMany({
+      where: whereClause,
       include: {
         seeker: { select: { name: true, phone: true } },
         dude: { select: { name: true, phone: true } },
         report: true,
+        chat: { orderBy: { createdAt: "asc" } },
         transactions: true,
         dispute: true,
         reviews: true,
@@ -24,7 +91,23 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
       orderBy: { createdAt: "desc" },
     });
 
-    res.json(bounties.map(mapBountyOutput));
+    // Strip private details for Dudes looking at open (unassigned) bounties
+    const result = rawBounties.map(b => {
+      if (user!.role === "DUDE" && b.dudeId !== user!.id && b.status === "pending") {
+        // Unassigned open bounty: hide chat history, report, and transactions
+        return {
+          ...b,
+          chat: [],
+          report: null,
+          transactions: [],
+          dispute: null,
+          reviews: [],
+        };
+      }
+      return b;
+    });
+
+    res.json(result.map(mapBountyOutput));
   } catch (error) {
     console.error("Error fetching bounties:", error);
     res.status(500).json({ error: "Failed to fetch bounties" });
@@ -32,7 +115,12 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
 });
 
 // 2. Get specific bounty details
-router.get("/:id", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get("/:id", authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const id = req.params.id as string;
 
   try {
@@ -51,6 +139,31 @@ router.get("/:id", async (req: AuthenticatedRequest, res: Response): Promise<voi
 
     if (!bounty) {
       res.status(404).json({ error: "Bounty not found" });
+      return;
+    }
+
+    // Access control: Seeker who created, Dude assigned, Dude looking to accept (pending), or Admin
+    const canAccess =
+      bounty.seekerId === req.user.id ||
+      (bounty.status === "pending" && req.user.role === "DUDE") ||
+      bounty.dudeId === req.user.id ||
+      req.user.role === "ADMIN";
+
+    if (!canAccess) {
+      res.status(403).json({ error: "Access denied to this bounty details" });
+      return;
+    }
+
+    // Strip details if it's a pending bounty being viewed by an unassigned Dude
+    if (req.user.role === "DUDE" && bounty.status === "pending") {
+      res.json({
+        ...bounty,
+        chat: [],
+        report: null,
+        transactions: [],
+        dispute: null,
+        reviews: [],
+      });
       return;
     }
 
@@ -186,8 +299,17 @@ router.post(
         return;
       }
 
-      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-      const dudeName = user?.name || "Rahul K.";
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { bankDetails: true },
+      });
+
+      if (!user?.bankDetails) {
+        res.status(400).json({ error: "Please configure your Payout Bank/UPI Details in your profile before accepting verification tasks." });
+        return;
+      }
+
+      const dudeName = user.name || "Rahul K.";
 
       const updated = await prisma.bounty.update({
         where: { id },
@@ -247,6 +369,11 @@ router.post(
 
       if (bounty.dudeId !== req.user.id) {
         res.status(403).json({ error: "You are not assigned to this bounty" });
+        return;
+      }
+
+      if (bounty.status !== "visiting") {
+        res.status(400).json({ error: "Can only submit verification reports for active tasks (visiting status)" });
         return;
       }
 
@@ -316,6 +443,11 @@ router.post(
         return;
       }
 
+      if (bounty.status !== "submitted" && bounty.status !== "disputed") {
+        res.status(400).json({ error: "Can only release escrow funds for submitted or disputed tasks" });
+        return;
+      }
+
       const updated = await prisma.bounty.update({
         where: { id },
         data: {
@@ -382,6 +514,21 @@ router.post(
 
       if (!bounty) {
         res.status(404).json({ error: "Bounty not found" });
+        return;
+      }
+
+      const isParticipant =
+        bounty.seekerId === req.user.id ||
+        bounty.dudeId === req.user.id ||
+        req.user.role === "ADMIN";
+
+      if (!isParticipant) {
+        res.status(403).json({ error: "Only bounty participants or admins can raise disputes" });
+        return;
+      }
+
+      if (bounty.status !== "visiting" && bounty.status !== "submitted") {
+        res.status(400).json({ error: "Disputes can only be raised for active or submitted tasks" });
         return;
       }
 
@@ -516,6 +663,15 @@ router.post(
 
       if (bounty.seekerId !== req.user.id) {
         res.status(403).json({ error: "Only the seeker can review the dude" });
+        return;
+      }
+
+      const existingReview = await prisma.review.findFirst({
+        where: { bountyId: id, reviewerId: req.user.id },
+      });
+
+      if (existingReview) {
+        res.status(400).json({ error: "You have already submitted a review for this PG verification" });
         return;
       }
 

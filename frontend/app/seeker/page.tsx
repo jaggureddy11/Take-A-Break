@@ -123,9 +123,19 @@ function SeekerDashboardContent() {
       return;
     }
 
-    setToken(savedToken);
-    setCurrentUser(JSON.parse(savedUser));
+    try {
+      const parsedUser = JSON.parse(savedUser);
+      if (parsedUser.role === "DUDE") {
+        router.push("/dude");
+        return;
+      }
+      setCurrentUser(parsedUser);
+    } catch (e) {
+      router.push("/login");
+      return;
+    }
 
+    setToken(savedToken);
     fetchBounties(savedToken);
 
     // Auto-select query parameters if present

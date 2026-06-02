@@ -55,18 +55,37 @@ export default function AdminControl() {
 
   // Sync Database
   useEffect(() => {
-    fetchBounties();
+    const token = localStorage.getItem("tab_token");
+    const userStr = localStorage.getItem("tab_user");
+
+    if (!token || !userStr) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== "ADMIN") {
+        if (user.role === "DUDE") {
+          router.push("/dude");
+        } else {
+          router.push("/seeker");
+        }
+        return;
+      }
+    } catch (e) {
+      router.push("/login");
+      return;
+    }
+
+    fetchBounties(token);
   }, []);
 
-  const fetchBounties = async () => {
+  const fetchBounties = async (authToken: string) => {
     try {
-      const token = localStorage.getItem("tab_token");
-      const headers: any = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(`${BACKEND_URL}/api/bounties`, { headers });
+      const res = await fetch(`${BACKEND_URL}/api/bounties`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (res.ok) {
         const data = await res.json();
         setBounties(data);
