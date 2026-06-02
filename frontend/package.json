@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@neondatabase/neon-js": "^0.6.1-beta",
+    "better-auth": "^1.6.13",
     "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "razorpay": "^2.9.6",

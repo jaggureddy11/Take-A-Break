@@ -134,13 +134,96 @@ router.get(
       });
 
       if (!user) {
-        res.status(404).json({ error: "Profile not found" });
+        // User exists in Neon Auth but has not completed onboarding in public schema
+        res.json({
+          onboardingCompleted: false,
+          user: {
+            id: req.user.id,
+            email: req.user.email || "",
+            name: "",
+            role: "",
+          },
+        });
         return;
       }
 
-      res.json({ user });
+      res.json({
+        onboardingCompleted: true,
+        user,
+      });
     } catch (error) {
+      console.error("Profile fetch error:", error);
       res.status(500).json({ error: "Profile fetch failure" });
+    }
+  }
+);
+
+// 3.5. Register/Onboard Profile
+router.post(
+  "/register-profile",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const { name, phone, role } = req.body;
+
+    if (!name || !phone || !role) {
+      res.status(400).json({ error: "Name, phone, and role are required" });
+      return;
+    }
+
+    if (role !== "SEEKER" && role !== "DUDE") {
+      res.status(400).json({ error: "Role must be SEEKER or DUDE" });
+      return;
+    }
+
+    try {
+      // Check if phone number is already registered by another user
+      const existingUserByPhone = await prisma.user.findUnique({
+        where: { phone },
+      });
+
+      if (existingUserByPhone && existingUserByPhone.id !== req.user.id) {
+        res.status(400).json({ error: "Phone number is already in use by another user" });
+        return;
+      }
+
+      // Create or update user in public.User table
+      const user = await prisma.user.upsert({
+        where: { id: req.user.id },
+        update: { name, phone, role },
+        create: {
+          id: req.user.id,
+          phone,
+          name,
+          role,
+        },
+        include: { bankDetails: true },
+      });
+
+      // Sync role and name back to neon_auth.user table in database
+      try {
+        await prisma.$executeRawUnsafe(
+          'UPDATE "neon_auth"."user" SET role = $1, name = $2 WHERE id = $3',
+          role.toLowerCase(),
+          name,
+          req.user.id
+        );
+      } catch (dbErr) {
+        console.warn("Could not sync role directly to neon_auth.user schema:", dbErr);
+      }
+
+      res.json({
+        success: true,
+        onboardingCompleted: true,
+        user,
+      });
+    } catch (error) {
+      console.error("Error registering profile:", error);
+      res.status(500).json({ error: "Profile registration failure" });
     }
   }
 );
