@@ -5,11 +5,20 @@ export default function Footer() {
     <footer className="bg-[#121212] text-zinc-400 py-12 px-8 mt-auto border-t border-zinc-800 select-none">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
         <div className="max-w-md">
-          <div className="flex items-center gap-2 text-white font-heading font-bold text-lg mb-4">
-            <div className="w-6 h-6 rounded bg-[#cc5a37] flex items-center justify-center text-xs font-black">
-              T
+          <div className="flex items-center gap-3.5 mb-6 group select-none">
+            <img 
+              src="/logo.png" 
+              alt="TAB Logo" 
+              className="w-14 h-14 object-contain filter drop-shadow-[0_2px_8px_rgba(204,90,55,0.3)] transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="flex flex-col justify-center">
+              <span className="font-heading font-black text-3xl tracking-tight text-white leading-none">
+                TAB<span className="text-[#cc5a37]">.</span>
+              </span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mt-1.5 transition-colors group-hover:text-zinc-400">
+                Take A Breath
+              </span>
             </div>
-            <span>TAB (Take A Breath)</span>
           </div>
           <p className="text-xs leading-relaxed">
             Your Local Dude, On The Ground. Direct physical validation of PGs and student accommodations in Bengaluru.

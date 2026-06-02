@@ -31,17 +31,17 @@ export default function Header() {
     <header className="bg-white/90 backdrop-blur-md border-b border-zinc-100/90 py-3.5 px-6 md:px-8 sticky top-0 z-40 select-none transition-all duration-300">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Brand Logo Lockup */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3.5 group">
           <img 
             src="/logo.png" 
             alt="TAB Logo" 
-            className="w-11 h-11 object-contain group-hover:scale-105 transition-all duration-300 filter drop-shadow-[0_2px_6px_rgba(204,90,55,0.2)]"
+            className="w-14 h-14 object-contain group-hover:scale-105 transition-all duration-300 filter drop-shadow-[0_2px_8px_rgba(204,90,55,0.25)]"
           />
           <div className="flex flex-col justify-center">
-            <span className="font-heading font-extrabold text-2xl tracking-tight text-zinc-900 leading-none group-hover:text-[#cc5a37] transition-colors duration-300">
+            <span className="font-heading font-black text-3xl tracking-tight text-zinc-900 leading-none group-hover:text-[#cc5a37] transition-colors duration-300">
               TAB<span className="text-[#cc5a37]">.</span>
             </span>
-            <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest leading-none mt-1.5 transition-colors duration-300 group-hover:text-zinc-500">
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mt-1.5 transition-colors duration-300 group-hover:text-zinc-500">
               Take A Breath
             </span>
           </div>
