@@ -21,9 +21,11 @@ export default function Header() {
     <header className="bg-white border-b border-zinc-100 py-4 px-8 sticky top-0 z-40 select-none">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded bg-[#cc5a37] flex items-center justify-center text-white font-heading font-black text-sm group-hover:scale-105 transition-all">
-            TAB
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="TAB Logo" 
+            className="w-8 h-8 object-contain rounded bg-[#cc5a37]/5 p-0.5 group-hover:scale-105 transition-all"
+          />
           <span className="font-heading font-extrabold text-xl tracking-tight text-black">TAB.</span>
         </Link>
         <nav className="hidden md:flex gap-8 text-[13px] font-bold text-[#495057]">
