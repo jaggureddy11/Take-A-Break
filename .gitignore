@@ -1,2 +1,11 @@
 .env
-config.js
+.env.local
+.env.*
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+frontend/prototype/config.js
+*.db
+*.db-journal

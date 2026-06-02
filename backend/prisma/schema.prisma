@@ -1,0 +1,81 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         String    @id @default(uuid())
+  phone      String    @unique
+  name       String?
+  role       String    // "SEEKER" or "DUDE" or "ADMIN"
+  otp        String?
+  otpExpiry  DateTime?
+  createdAt  DateTime  @default(now())
+  
+  // Relations
+  bountiesAsSeeker Bounty[] @relation("BountiesAsSeeker")
+  bountiesAsDude   Bounty[] @relation("BountiesAsDude")
+}
+
+model Bounty {
+  id           String              @id // e.g. "B-8831" or custom ID
+  area         String
+  locationName String
+  lat          Float
+  lng          Float
+  budgetMin    Int
+  budgetMax    Int
+  depositMin   Int
+  depositMax   Int
+  roomType     String
+  genderPref   String              @default("Any")
+  foodPref     String?
+  preferences  String              // Serialized JSON array for SQLite compatibility
+  notes        String
+  status       String              @default("pending") // pending, visiting, submitted, completed, disputed
+  seekerId     String
+  seekerName   String
+  dudeId       String?
+  dudeName     String?
+  escrowState  String              @default("secured") // secured, released, disputed
+  createdAt    DateTime            @default(now())
+  bountyType   String              @default("scouting") // scouting, verification
+  targetLink   String?
+  payoutAmount Int                 @default(400)
+  escrowAmount Int                 @default(499)
+
+  // Relations
+  seeker       User                @relation("BountiesAsSeeker", fields: [seekerId], references: [id])
+  dude         User?               @relation("BountiesAsDude", fields: [dudeId], references: [id])
+  report       VerificationReport?
+  chat         ChatMessage[]
+}
+
+model VerificationReport {
+  id         String   @id @default(uuid())
+  bountyId   String   @unique
+  wifiSpeed  Int
+  foodRating String
+  photo      String
+  location   String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  bounty     Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  bountyId  String
+  sender    String   // "seeker" or "dude"
+  text      String
+  time      String   // formatted time string, e.g. "10:35 AM"
+  createdAt DateTime @default(now())
+
+  // Relations
+  bounty    Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+}

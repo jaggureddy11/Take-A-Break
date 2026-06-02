@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Shield, Coins, BarChart3, Database, FileText } from "lucide-react";
 
 interface ChatMessage {
+  id?: string;
   sender: "seeker" | "dude";
   text: string;
   time: string;
@@ -28,82 +29,52 @@ interface Bounty {
   depositMin: number;
   depositMax: number;
   roomType: string;
-  genderPref: string;
+  genderPref?: string;
   foodPref?: string | null;
   preferences: string[];
   notes: string;
   status: "pending" | "visiting" | "submitted" | "completed" | "disputed";
   seekerName: string;
   dudeName: string | null;
+  dudeId?: string | null;
   escrowState: "secured" | "released" | "disputed";
   createdAt: string;
   chat: ChatMessage[];
   report: VerificationReport | null;
+  bountyType?: "scouting" | "verification";
+  targetLink?: string;
+  payoutAmount?: number;
+  escrowAmount?: number;
 }
-
-const DEFAULT_BOUNTIES: Bounty[] = [
-  {
-    id: "B-8831",
-    area: "Indiranagar",
-    locationName: "100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038",
-    lat: 12.9719,
-    lng: 77.6412,
-    budgetMin: 10000,
-    budgetMax: 15000,
-    depositMin: 1,
-    depositMax: 3,
-    roomType: "Single Room",
-    preferences: ["wifi", "food", "washroom"],
-    notes: "Please check if the PG Mess has north-Indian food options, and run speed test near the window.",
-    status: "visiting",
-    seekerName: "Amit R.",
-    dudeName: "Rahul K.",
-    escrowState: "secured",
-    createdAt: "2026-05-30T10:30:00Z",
-    chat: [],
-    report: null
-  },
-  {
-    id: "B-2144",
-    area: "Koramangala",
-    locationName: "Koramangala 4th Block, Bengaluru, Karnataka 560034",
-    lat: 12.9352,
-    lng: 77.6244,
-    budgetMin: 8000,
-    budgetMax: 12000,
-    depositMin: 2,
-    depositMax: 2,
-    roomType: "Double Sharing",
-    preferences: ["wifi", "washroom"],
-    notes: "Must be walking distance to St. John's Hospital. Power backup is critical.",
-    status: "pending",
-    seekerName: "Neha S.",
-    dudeName: null,
-    escrowState: "secured",
-    createdAt: "2026-05-30T11:45:00Z",
-    chat: [],
-    report: null
-  }
-];
 
 export default function AdminControl() {
   const router = useRouter();
   const [bounties, setBounties] = useState<Bounty[]>([]);
 
+  const BACKEND_URL = "http://localhost:5001";
+
   // Sync Database
   useEffect(() => {
-    const data = localStorage.getItem("tab_db");
-    if (data) {
-      try {
-        setBounties(JSON.parse(data));
-      } catch (e) {
-        setBounties(DEFAULT_BOUNTIES);
-      }
-    } else {
-      localStorage.setItem("tab_db", JSON.stringify(DEFAULT_BOUNTIES));
-      setBounties(DEFAULT_BOUNTIES);
-    }
+    fetchBounties();
   }, []);
+
+  const fetchBounties = async () => {
+    try {
+      const token = localStorage.getItem("tab_token");
+      const headers: any = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${BACKEND_URL}/api/bounties`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setBounties(data);
+      }
+    } catch (err) {
+      console.error("Failed to load admin bounties:", err);
+    }
+  };
 
   // Compute platform statistics
   let totalEscrow = 0;
@@ -111,7 +82,7 @@ export default function AdminControl() {
 
   bounties.forEach(b => {
     if (b.status !== "completed") {
-      totalEscrow += 499;
+      totalEscrow += b.escrowAmount || 499;
     } else {
       platformRevenue += 99;
     }
@@ -125,19 +96,31 @@ export default function AdminControl() {
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-150 uppercase">Report Ready</span>;
       case "visiting":
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-600 border border-yellow-150 uppercase">Dude Visiting</span>;
+      case "disputed":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-150 uppercase">Disputed</span>;
       default:
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-150 uppercase">Pending</span>;
     }
   };
 
-  const getEscrowBadge = (state: string) => {
+  const getEscrowBadge = (state: string, bounty: Bounty) => {
+    const payout = bounty.payoutAmount || 400;
+    const escrow = bounty.escrowAmount || 499;
     switch (state) {
       case "released":
-        return <span className="text-[10px] font-bold text-zinc-500">₹400 Sent / ₹99 Rev</span>;
+        return <span className="text-[10px] font-bold text-zinc-500 font-sans">₹{payout} Sent / ₹99 Rev</span>;
       case "disputed":
-        return <span className="text-[10px] font-bold text-rose-600 flex items-center gap-1">⚠️ Hold / Disputed</span>;
+        return <span className="text-[10px] font-bold text-rose-655 flex items-center gap-1 font-sans">⚠️ Hold / Disputed</span>;
       default:
-        return <span className="text-[10px] font-bold text-black">₹499 Secured</span>;
+        return <span className="text-[10px] font-bold text-black font-sans">₹{escrow} Secured</span>;
+    }
+  };
+
+  const handleInspectLogs = (bounty: Bounty) => {
+    if (bounty.dudeId) {
+      router.push(`/dude?id=${bounty.id}`);
+    } else {
+      router.push(`/seeker?id=${bounty.id}`);
     }
   };
 
@@ -187,6 +170,7 @@ export default function AdminControl() {
               <tr className="bg-zinc-50 border-b border-zinc-150 text-[10px] font-bold uppercase text-zinc-500 select-none">
                 <th className="p-4">Bounty ID</th>
                 <th className="p-4">Area</th>
+                <th className="p-4">Type</th>
                 <th className="p-4">Budget Range</th>
                 <th className="p-4">Seeker</th>
                 <th className="p-4">Assigned Dude</th>
@@ -200,14 +184,19 @@ export default function AdminControl() {
                 <tr key={b.id} className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors">
                   <td className="p-4 font-mono font-bold text-black">{b.id}</td>
                   <td className="p-4">📍 {b.area}</td>
+                  <td className="p-4">
+                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase select-none ${
+                      b.bountyType === "verification" ? "bg-indigo-50 text-indigo-600 border-indigo-150" : "bg-orange-50 text-[#cc5a37] border-orange-150"
+                    }`}>{b.bountyType === "verification" ? "Verification" : "Scouting"}</span>
+                  </td>
                   <td className="p-4">₹{b.budgetMin.toLocaleString()} - ₹{b.budgetMax.toLocaleString()}</td>
                   <td className="p-4 font-semibold text-zinc-800">{b.seekerName}</td>
                   <td className="p-4 text-zinc-600">{b.dudeName || <span className="text-zinc-300 font-medium">None</span>}</td>
                   <td className="p-4">{getStatusBadge(b.status)}</td>
-                  <td className="p-4">{getEscrowBadge(b.escrowState)}</td>
+                  <td className="p-4">{getEscrowBadge(b.escrowState, b)}</td>
                   <td className="p-4 select-none">
                     <button 
-                      onClick={() => router.push(`/seeker?id=${b.id}`)}
+                      onClick={() => handleInspectLogs(b)}
                       className="px-3 py-1.5 border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 rounded font-semibold text-[10px] text-zinc-800 cursor-pointer transition-all inline-flex items-center gap-1"
                     >
                       <FileText size={11} /> Inspect Logs

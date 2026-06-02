@@ -42,19 +42,12 @@ export default function Home() {
   const [simIndex, setSimIndex] = useState(0);
   const simTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Load bounties from database or storage
+  // Load bounties from backend database
   useEffect(() => {
-    const data = localStorage.getItem("tab_db");
-    if (data) {
-      try {
-        setBounties(JSON.parse(data));
-      } catch (e) {
-        setBounties(DEFAULT_BOUNTIES);
-      }
-    } else {
-      localStorage.setItem("tab_db", JSON.stringify(DEFAULT_BOUNTIES));
-      setBounties(DEFAULT_BOUNTIES);
-    }
+    fetch("http://localhost:5001/api/bounties")
+      .then((res) => res.json())
+      .then((data) => setBounties(data))
+      .catch(() => setBounties(DEFAULT_BOUNTIES));
   }, []);
 
   // Run chat simulation loop
