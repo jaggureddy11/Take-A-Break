@@ -199,15 +199,28 @@ function SeekerDashboardContent() {
   // 3. Initialize Map (Google Maps Script or Mock Fallback)
   useEffect(() => {
     const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-    if (mapsKey && mapsKey !== "placeholder-anon-key" && !(window as any).google) {
-      const script = document.createElement("script");
-      script.id = "google-maps-script";
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initGoogleMap();
-      script.onerror = () => initMockMap();
-      document.head.appendChild(script);
+    const existingScript = document.getElementById("google-maps-script");
+
+    if (mapsKey && mapsKey !== "placeholder-anon-key") {
+      if ((window as any).google) {
+        initGoogleMap();
+      } else if (!existingScript) {
+        const script = document.createElement("script");
+        script.id = "google-maps-script";
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => initGoogleMap();
+        script.onerror = () => initMockMap();
+        document.head.appendChild(script);
+      } else {
+        // Script is already injected and loading, attach onload listener
+        const handleLoad = () => initGoogleMap();
+        existingScript.addEventListener("load", handleLoad);
+        return () => {
+          existingScript.removeEventListener("load", handleLoad);
+        };
+      }
     } else if ((window as any).google) {
       initGoogleMap();
     } else {
