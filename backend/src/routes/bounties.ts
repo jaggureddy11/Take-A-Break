@@ -17,6 +17,9 @@ router.get("/", async (req: AuthenticatedRequest, res: Response): Promise<void> 
         seeker: { select: { name: true, phone: true } },
         dude: { select: { name: true, phone: true } },
         report: true,
+        transactions: true,
+        dispute: true,
+        reviews: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -40,6 +43,9 @@ router.get("/:id", async (req: AuthenticatedRequest, res: Response): Promise<voi
         dude: { select: { name: true, phone: true } },
         report: true,
         chat: { orderBy: { createdAt: "asc" } },
+        transactions: true,
+        dispute: true,
+        reviews: true,
       },
     });
 
@@ -95,6 +101,8 @@ router.post(
       const user = await prisma.user.findUnique({ where: { id: req.user.id } });
       const seekerName = user?.name || "Amit R.";
 
+      const bountyAmount = parseInt(escrowAmount) || 499;
+
       const bounty = await prisma.bounty.create({
         data: {
           id: id as string,
@@ -118,13 +126,25 @@ router.post(
           bountyType: bountyType || "scouting",
           targetLink,
           payoutAmount: parseInt(payoutAmount) || 400,
-          escrowAmount: parseInt(escrowAmount) || 499,
+          escrowAmount: bountyAmount,
+          transactions: {
+            create: {
+              userId: req.user.id,
+              amount: bountyAmount,
+              type: "DEPOSIT",
+              status: "SUCCESS",
+              razorpayId: `pay_${Math.random().toString(36).substring(2, 11)}`,
+            },
+          },
         },
         include: {
           seeker: { select: { name: true, phone: true } },
           dude: { select: { name: true, phone: true } },
           report: true,
           chat: true,
+          transactions: true,
+          dispute: true,
+          reviews: true,
         },
       });
 
@@ -291,6 +311,11 @@ router.post(
         return;
       }
 
+      if (!bounty.dudeId) {
+        res.status(400).json({ error: "Cannot release funds for an unassigned bounty" });
+        return;
+      }
+
       const updated = await prisma.bounty.update({
         where: { id },
         data: {
@@ -303,12 +328,31 @@ router.post(
               time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           },
+          transactions: {
+            create: [
+              {
+                userId: bounty.dudeId,
+                amount: bounty.payoutAmount || 400,
+                type: "PAYOUT",
+                status: "SUCCESS",
+              },
+              {
+                userId: req.user.id,
+                amount: (bounty.escrowAmount || 499) - (bounty.payoutAmount || 400),
+                type: "FEE",
+                status: "SUCCESS",
+              },
+            ],
+          },
         },
         include: {
           seeker: { select: { name: true, phone: true } },
           dude: { select: { name: true, phone: true } },
           report: true,
           chat: { orderBy: { createdAt: "asc" } },
+          transactions: true,
+          dispute: true,
+          reviews: true,
         },
       });
 
@@ -331,6 +375,7 @@ router.post(
     }
 
     const id = req.params.id as string;
+    const { reason } = req.body;
 
     try {
       const bounty = await prisma.bounty.findUnique({ where: { id } });
@@ -348,8 +393,15 @@ router.post(
           chat: {
             create: {
               sender: req.user.role === "SEEKER" ? "seeker" : "dude",
-              text: `⚠️ Dispute registered for this bounty audit log. Admin review requested.`,
+              text: `⚠️ Dispute registered for this bounty audit log. Admin review requested. Reason: ${reason || "No description provided"}`,
               time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          },
+          dispute: {
+            create: {
+              raisedById: req.user.id,
+              reason: reason || "No description provided",
+              status: "OPEN",
             },
           },
         },
@@ -358,6 +410,9 @@ router.post(
           dude: { select: { name: true, phone: true } },
           report: true,
           chat: { orderBy: { createdAt: "asc" } },
+          transactions: true,
+          dispute: true,
+          reviews: true,
         },
       });
 
@@ -419,6 +474,65 @@ router.post(
     } catch (error) {
       console.error("Error creating chat message:", error);
       res.status(500).json({ error: "Failed to send chat message" });
+    }
+  }
+);
+
+// 9. Submit a review for a completed bounty (Seeker only)
+router.post(
+  "/:id/review",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const id = req.params.id as string;
+    const { rating, comment } = req.body;
+
+    if (!rating) {
+      res.status(400).json({ error: "Rating is required" });
+      return;
+    }
+
+    try {
+      const bounty = await prisma.bounty.findUnique({ where: { id } });
+
+      if (!bounty) {
+        res.status(404).json({ error: "Bounty not found" });
+        return;
+      }
+
+      if (bounty.status !== "completed") {
+        res.status(400).json({ error: "Reviews can only be submitted for completed bounties" });
+        return;
+      }
+
+      if (!bounty.dudeId) {
+        res.status(400).json({ error: "No Dude assigned to this bounty" });
+        return;
+      }
+
+      if (bounty.seekerId !== req.user.id) {
+        res.status(403).json({ error: "Only the seeker can review the dude" });
+        return;
+      }
+
+      const review = await prisma.review.create({
+        data: {
+          bountyId: id,
+          reviewerId: req.user.id,
+          revieweeId: bounty.dudeId,
+          rating: parseInt(rating),
+          comment: comment || "",
+        },
+      });
+
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ error: "Failed to submit review" });
     }
   }
 );

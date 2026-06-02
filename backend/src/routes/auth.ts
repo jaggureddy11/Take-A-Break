@@ -118,6 +118,7 @@ router.get(
     try {
       const user = await prisma.user.findUnique({
         where: { id: req.user.id },
+        include: { bankDetails: true },
       });
 
       if (!user) {
@@ -148,11 +149,62 @@ router.put(
       const user = await prisma.user.update({
         where: { id: req.user.id },
         data: { name },
+        include: { bankDetails: true },
       });
 
       res.json({ success: true, user });
     } catch (error) {
       res.status(500).json({ error: "Profile update failure" });
+    }
+  }
+);
+
+// 5. Get Bank Details
+router.get(
+  "/profile/bank",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const bankDetails = await prisma.bankDetails.findUnique({
+        where: { userId: req.user.id },
+      });
+
+      res.json(bankDetails || null);
+    } catch (error) {
+      console.error("Error fetching bank details:", error);
+      res.status(500).json({ error: "Failed to fetch bank details" });
+    }
+  }
+);
+
+// 6. Update Bank Details
+router.post(
+  "/profile/bank",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const { upiId, accountNo, ifscCode, bankName } = req.body;
+
+    try {
+      const bankDetails = await prisma.bankDetails.upsert({
+        where: { userId: req.user.id },
+        update: { upiId, accountNo, ifscCode, bankName },
+        create: { userId: req.user.id, upiId, accountNo, ifscCode, bankName },
+      });
+
+      res.json({ success: true, bankDetails });
+    } catch (error) {
+      console.error("Error updating bank details:", error);
+      res.status(500).json({ error: "Failed to update bank details" });
     }
   }
 );

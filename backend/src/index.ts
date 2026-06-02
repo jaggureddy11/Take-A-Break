@@ -36,211 +36,296 @@ app.get("/api/status", (req: Request, res: Response) => {
 // Automated database seeder on launch
 const seedDatabase = async () => {
   try {
-    const userCount = await prisma.user.count();
-    if (userCount === 0) {
-      console.log("⚙️  Database is blank. Seeding demo users and bounties...");
+    console.log("🧹 Cleaning transient database tables to reset demo state...");
+    await prisma.review.deleteMany();
+    await prisma.dispute.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.chatMessage.deleteMany();
+    await prisma.verificationReport.deleteMany();
+    await prisma.bounty.deleteMany();
+    await prisma.bankDetails.deleteMany();
+    console.log("🧹 Transient tables cleared.");
 
-      // 1. Create Seeker, Dude, and Admin
-      const seeker = await prisma.user.create({
-        data: {
-          phone: "+919876543210",
-          name: "Amit R.",
-          role: "SEEKER",
-        },
-      });
+    console.log("⚙️  Seeding demo users, bank details, and bounties...");
 
-      const dude = await prisma.user.create({
-        data: {
-          phone: "+918765432109",
-          name: "Rahul K.",
-          role: "DUDE",
-        },
-      });
+    // 1. Upsert Seeker, Dude, and Admin
+    const seeker = await prisma.user.upsert({
+      where: { phone: "+919876543210" },
+      update: { name: "Amit R.", role: "SEEKER" },
+      create: {
+        phone: "+919876543210",
+        name: "Amit R.",
+        role: "SEEKER",
+      },
+    });
 
-      const admin = await prisma.user.create({
-        data: {
-          phone: "+917654321098",
-          name: "Admin Master",
-          role: "ADMIN",
-        },
-      });
+    const dude = await prisma.user.upsert({
+      where: { phone: "+918765432109" },
+      update: { name: "Rahul K.", role: "DUDE" },
+      create: {
+        phone: "+918765432109",
+        name: "Rahul K.",
+        role: "DUDE",
+      },
+    });
 
-      console.log("✔ Seeded users: Seeker (Amit R.), Dude (Rahul K.), Admin (Admin Master)");
+    const admin = await prisma.user.upsert({
+      where: { phone: "+917654321098" },
+      update: { name: "Admin Master", role: "ADMIN" },
+      create: {
+        phone: "+917654321098",
+        name: "Admin Master",
+        role: "ADMIN",
+      },
+    });
 
-      // 2. Create Bounties
-      // B-8831 (visiting, assigned to Rahul K)
-      await prisma.bounty.create({
-        data: {
-          id: "B-8831",
-          area: "Indiranagar",
-          locationName: "100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038",
-          lat: 12.9719,
-          lng: 77.6412,
-          budgetMin: 10000,
-          budgetMax: 15000,
-          depositMin: 1,
-          depositMax: 3,
-          roomType: "Single Room",
-          genderPref: "Any",
-          preferences: ["wifi", "food", "washroom"],
-          notes: "Please check if the PG Mess has north-Indian food options, and run speed test near the window.",
-          status: "visiting",
-          seekerId: seeker.id,
-          seekerName: seeker.name || "Amit R.",
-          dudeId: dude.id,
-          dudeName: dude.name || "Rahul K.",
-          escrowState: "secured",
-          payoutAmount: 400,
-          escrowAmount: 499,
-          chat: {
-            create: [
-              {
-                sender: "dude",
-                text: "Hi Amit, I've accepted your bounty. Heading to the Indiranagar double-story PG near Metro Station now.",
-                time: "10:35 AM",
-              },
-              {
-                sender: "seeker",
-                text: "Thanks Rahul! Please pay extra attention to the room ventilation.",
-                time: "10:38 AM",
-              },
-              {
-                sender: "dude",
-                text: "Got it, just reached the PG. Entering the single room on the second floor.",
-                time: "10:55 AM",
-              },
-            ],
-          },
-        },
-      });
+    // Seed Bank Details for Dude
+    await prisma.bankDetails.upsert({
+      where: { userId: dude.id },
+      update: {
+        upiId: "rahulk@okaxis",
+        accountNo: "918765432109",
+        ifscCode: "UTIB0001234",
+        bankName: "Axis Bank",
+      },
+      create: {
+        userId: dude.id,
+        upiId: "rahulk@okaxis",
+        accountNo: "918765432109",
+        ifscCode: "UTIB0001234",
+        bankName: "Axis Bank",
+      },
+    });
 
-      // B-2144 (pending, unassigned)
-      await prisma.bounty.create({
-        data: {
-          id: "B-2144",
-          area: "Koramangala",
-          locationName: "Koramangala 4th Block, Bengaluru, Karnataka 560034",
-          lat: 12.9352,
-          lng: 77.6244,
-          budgetMin: 8000,
-          budgetMax: 12000,
-          depositMin: 2,
-          depositMax: 2,
-          roomType: "Double Sharing",
-          genderPref: "Any",
-          preferences: ["wifi", "washroom"],
-          notes: "Must be walking distance to St. John's Hospital. Power backup is critical.",
-          status: "pending",
-          seekerId: seeker.id,
-          seekerName: seeker.name || "Amit R.",
-          escrowState: "secured",
-          payoutAmount: 400,
-          escrowAmount: 499,
-        },
-      });
+    console.log("✔ Seeded/Upserted users: Seeker (Amit R.), Dude (Rahul K. with Bank Details), Admin (Admin Master)");
 
-      // B-9982 (submitted, assigned to Rahul K, has report)
-      await prisma.bounty.create({
-        data: {
-          id: "B-9982",
-          area: "HSR Layout",
-          locationName: "Sector 2, HSR Layout, Bengaluru, Karnataka 560102",
-          lat: 12.9105,
-          lng: 77.645,
-          budgetMin: 12000,
-          budgetMax: 18000,
-          depositMin: 2,
-          depositMax: 4,
-          roomType: "Single Room",
-          genderPref: "Any",
-          preferences: ["wifi", "food", "washroom", "restriction"],
-          notes: "Looking for premium space in Sector 2. Need food quality check.",
-          status: "submitted",
-          seekerId: seeker.id,
-          seekerName: seeker.name || "Amit R.",
-          dudeId: dude.id,
-          dudeName: dude.name || "Rahul K.",
-          escrowState: "secured",
-          payoutAmount: 400,
-          escrowAmount: 499,
-          chat: {
-            create: [
-              {
-                sender: "dude",
-                text: "Hey Vikram, done with the detailed walk. Sending the verification report now.",
-                time: "09:40 AM",
-              },
-              {
-                sender: "dude",
-                text: "The food is surprisingly good. Daily menu includes paneer, dal, and standard roti.",
-                time: "09:42 AM",
-              },
-            ],
-          },
-          report: {
-            create: {
-              wifiSpeed: 105,
-              foodRating: "5",
-              photo: "room_premium.jpg",
-              location: "https://maps.google.com/?q=Sector+2+HSR+Layout+Bengaluru",
+    // 2. Create Bounties
+    // B-8831 (visiting, assigned to Rahul K)
+    await prisma.bounty.create({
+      data: {
+        id: "B-8831",
+        area: "Indiranagar",
+        locationName: "100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038",
+        lat: 12.9719,
+        lng: 77.6412,
+        budgetMin: 10000,
+        budgetMax: 15000,
+        depositMin: 1,
+        depositMax: 3,
+        roomType: "Single Room",
+        genderPref: "Any",
+        preferences: ["wifi", "food", "washroom"],
+        notes: "Please check if the PG Mess has north-Indian food options, and run speed test near the window.",
+        status: "visiting",
+        seekerId: seeker.id,
+        seekerName: seeker.name || "Amit R.",
+        dudeId: dude.id,
+        dudeName: dude.name || "Rahul K.",
+        escrowState: "secured",
+        payoutAmount: 400,
+        escrowAmount: 499,
+        chat: {
+          create: [
+            {
+              sender: "dude",
+              text: "Hi Amit, I've accepted your bounty. Heading to the Indiranagar double-story PG near Metro Station now.",
+              time: "10:35 AM",
             },
-          },
-        },
-      });
-
-      // B-1024 (completed, assigned to Rahul K, has report, escrow released)
-      await prisma.bounty.create({
-        data: {
-          id: "B-1024",
-          area: "Whitefield",
-          locationName: "Whitefield, Bengaluru, Karnataka 560066",
-          lat: 12.9698,
-          lng: 77.7499,
-          budgetMin: 10000,
-          budgetMax: 16000,
-          depositMin: 1,
-          depositMax: 2,
-          roomType: "Single Room",
-          genderPref: "Any",
-          preferences: ["wifi"],
-          notes: "Check if the flatmates are quiet, and verify mobile reception inside the room.",
-          status: "completed",
-          seekerId: seeker.id,
-          seekerName: seeker.name || "Amit R.",
-          dudeId: dude.id,
-          dudeName: dude.name || "Rahul K.",
-          escrowState: "released",
-          payoutAmount: 400,
-          escrowAmount: 499,
-          chat: {
-            create: [
-              {
-                sender: "dude",
-                text: "Mobile signal is full 5G (Airtel and Jio).",
-                time: "02:35 PM",
-              },
-              {
-                sender: "seeker",
-                text: "Awesome! Looks perfect. Releasing payment now.",
-                time: "02:40 PM",
-              },
-            ],
-          },
-          report: {
-            create: {
-              wifiSpeed: 180,
-              foodRating: "4",
-              photo: "room_double.jpg",
-              location: "https://maps.google.com/?q=Whitefield+Bengaluru",
+            {
+              sender: "seeker",
+              text: "Thanks Rahul! Please pay extra attention to the room ventilation.",
+              time: "10:38 AM",
             },
+            {
+              sender: "dude",
+              text: "Got it, just reached the PG. Entering the single room on the second floor.",
+              time: "10:55 AM",
+            },
+          ],
+        },
+        transactions: {
+          create: [
+            {
+              userId: seeker.id,
+              amount: 499,
+              type: "DEPOSIT",
+              status: "SUCCESS",
+              razorpayId: "pay_visiting8831",
+            },
+          ],
+        },
+      },
+    });
+
+    // B-2144 (pending, unassigned)
+    await prisma.bounty.create({
+      data: {
+        id: "B-2144",
+        area: "Koramangala",
+        locationName: "Koramangala 4th Block, Bengaluru, Karnataka 560034",
+        lat: 12.9352,
+        lng: 77.6244,
+        budgetMin: 8000,
+        budgetMax: 12000,
+        depositMin: 2,
+        depositMax: 2,
+        roomType: "Double Sharing",
+        genderPref: "Any",
+        preferences: ["wifi", "washroom"],
+        notes: "Must be walking distance to St. John's Hospital. Power backup is critical.",
+        status: "pending",
+        seekerId: seeker.id,
+        seekerName: seeker.name || "Amit R.",
+        escrowState: "secured",
+        payoutAmount: 400,
+        escrowAmount: 499,
+        transactions: {
+          create: [
+            {
+              userId: seeker.id,
+              amount: 499,
+              type: "DEPOSIT",
+              status: "SUCCESS",
+              razorpayId: "pay_pending2144",
+            },
+          ],
+        },
+      },
+    });
+
+    // B-9982 (submitted, assigned to Rahul K, has report)
+    await prisma.bounty.create({
+      data: {
+        id: "B-9982",
+        area: "HSR Layout",
+        locationName: "Sector 2, HSR Layout, Bengaluru, Karnataka 560102",
+        lat: 12.9105,
+        lng: 77.645,
+        budgetMin: 12000,
+        budgetMax: 18000,
+        depositMin: 2,
+        depositMax: 4,
+        roomType: "Single Room",
+        genderPref: "Any",
+        preferences: ["wifi", "food", "washroom", "restriction"],
+        notes: "Looking for premium space in Sector 2. Need food quality check.",
+        status: "submitted",
+        seekerId: seeker.id,
+        seekerName: seeker.name || "Amit R.",
+        dudeId: dude.id,
+        dudeName: dude.name || "Rahul K.",
+        escrowState: "secured",
+        payoutAmount: 400,
+        escrowAmount: 499,
+        chat: {
+          create: [
+            {
+              sender: "dude",
+              text: "Hey Vikram, done with the detailed walk. Sending the verification report now.",
+              time: "09:40 AM",
+            },
+            {
+              sender: "dude",
+              text: "The food is surprisingly good. Daily menu includes paneer, dal, and standard roti.",
+              time: "09:42 AM",
+            },
+          ],
+        },
+        report: {
+          create: {
+            wifiSpeed: 105,
+            foodRating: "5",
+            photo: "room_premium.jpg",
+            location: "https://maps.google.com/?q=Sector+2+HSR+Layout+Bengaluru",
           },
         },
-      });
+        transactions: {
+          create: [
+            {
+              userId: seeker.id,
+              amount: 499,
+              type: "DEPOSIT",
+              status: "SUCCESS",
+              razorpayId: "pay_submitted9982",
+            },
+          ],
+        },
+      },
+    });
 
-      console.log("✔ Seeded 4 default Bengaluru verification bounties!");
-    } else {
-      console.log("ℹ️  Database already contains records. Skipping auto-seeding.");
-    }
+    // B-1024 (completed, assigned to Rahul K, has report, escrow released)
+    await prisma.bounty.create({
+      data: {
+        id: "B-1024",
+        area: "Whitefield",
+        locationName: "Whitefield, Bengaluru, Karnataka 560066",
+        lat: 12.9698,
+        lng: 77.7499,
+        budgetMin: 10000,
+        budgetMax: 16000,
+        depositMin: 1,
+        depositMax: 2,
+        roomType: "Single Room",
+        genderPref: "Any",
+        preferences: ["wifi"],
+        notes: "Check if the flatmates are quiet, and verify mobile reception inside the room.",
+        status: "completed",
+        seekerId: seeker.id,
+        seekerName: seeker.name || "Amit R.",
+        dudeId: dude.id,
+        dudeName: dude.name || "Rahul K.",
+        escrowState: "released",
+        payoutAmount: 400,
+        escrowAmount: 499,
+        chat: {
+          create: [
+            {
+              sender: "dude",
+              text: "Mobile signal is full 5G (Airtel and Jio).",
+              time: "02:35 PM",
+            },
+            {
+              sender: "seeker",
+              text: "Awesome! Looks perfect. Releasing payment now.",
+              time: "02:40 PM",
+            },
+          ],
+        },
+        report: {
+          create: {
+            wifiSpeed: 180,
+            foodRating: "4",
+            photo: "room_double.jpg",
+            location: "https://maps.google.com/?q=Whitefield+Bengaluru",
+          },
+        },
+        transactions: {
+          create: [
+            {
+              userId: seeker.id,
+              amount: 499,
+              type: "DEPOSIT",
+              status: "SUCCESS",
+              razorpayId: "pay_completed1024",
+            },
+            {
+              userId: dude.id,
+              amount: 400,
+              type: "PAYOUT",
+              status: "SUCCESS",
+            },
+            {
+              userId: seeker.id,
+              amount: 99,
+              type: "FEE",
+              status: "SUCCESS",
+            },
+          ],
+        },
+      },
+    });
+
+    console.log("✔ Seeded 4 default Bengaluru verification bounties with full audit transactions!");
   } catch (error) {
     console.error("❌ Seeding failure on launch:", error);
   }
