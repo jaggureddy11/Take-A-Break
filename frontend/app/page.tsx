@@ -70,20 +70,7 @@ export default function Home() {
               Post a Bounty (Start for ₹499)
             </Link>
           </div>
-          <div className="flex gap-12 sm:gap-20 mt-16 border-t border-zinc-100 pt-10 w-full justify-center text-zinc-800">
-            <div className="flex flex-col">
-              <span className="font-heading font-black text-2xl tracking-tight text-[#cc5a37]">4.9/5</span>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mt-1">User Satisfaction</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-heading font-black text-2xl tracking-tight text-[#cc5a37]">1,200+</span>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mt-1">PGs Audited</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-heading font-black text-2xl tracking-tight text-[#cc5a37]">₹4L+</span>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mt-1">Paid to Dudes</span>
-            </div>
-          </div>
+
         </div>
       </section>
 
