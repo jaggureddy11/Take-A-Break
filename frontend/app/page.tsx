@@ -2,25 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { MapPin, Wifi, CheckSquare, ShieldCheck, ChevronDown, Award, Play } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
-interface Bounty {
-  id: string;
-  area: string;
-  roomType: string;
-  budgetMin: number;
-  budgetMax: number;
-  seekerName: string;
-  status: string;
-}
 
-const DEFAULT_BOUNTIES: Bounty[] = [
-  { id: "B-8831", area: "Indiranagar", roomType: "Single Room", budgetMin: 10000, budgetMax: 15000, seekerName: "Amit R.", status: "visiting" },
-  { id: "B-2144", area: "Koramangala", roomType: "Double Sharing", budgetMin: 8000, budgetMax: 12000, seekerName: "Neha S.", status: "pending" },
-  { id: "B-9982", area: "HSR Layout", roomType: "Single Room", budgetMin: 12000, budgetMax: 18000, seekerName: "Vikram M.", status: "submitted" },
-  { id: "B-1024", area: "Whitefield", roomType: "Single Room", budgetMin: 10000, budgetMax: 16000, seekerName: "Rohan D.", status: "completed" }
-];
 
 const SIM_CHAT_MESSAGES = [
   { sender: "dude", text: "Hey! Just reached the Indiranagar PG. Sending my live coordinates.", delay: 1000 },
@@ -35,20 +19,10 @@ const SIM_CHAT_MESSAGES = [
 ];
 
 export default function Home() {
-  const router = useRouter();
-  const [bounties, setBounties] = useState<Bounty[]>([]);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [simMessages, setSimMessages] = useState<any[]>([]);
   const [simIndex, setSimIndex] = useState(0);
   const simTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Load bounties from backend database
-  useEffect(() => {
-    fetch("http://localhost:5001/api/bounties")
-      .then((res) => res.json())
-      .then((data) => setBounties(data))
-      .catch(() => setBounties(DEFAULT_BOUNTIES));
-  }, []);
 
   // Run chat simulation loop
   useEffect(() => {
@@ -71,23 +45,6 @@ export default function Home() {
       }
     };
   }, [simIndex]);
-
-  const handleAreaSelect = (areaName: string) => {
-    router.push(`/seeker?area=${encodeURIComponent(areaName)}`);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "visiting":
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#ffc107]/10 text-[#ffc107] border border-[#ffc107]/20 uppercase">Dude visiting</span>;
-      case "submitted":
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20 uppercase">Report ready</span>;
-      case "completed":
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/35 uppercase">Verified</span>;
-      default:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase">Open Bounty</span>;
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col bg-white">
@@ -112,12 +69,6 @@ export default function Home() {
             >
               Post a Bounty (Start for ₹499)
             </Link>
-            <Link 
-              href="/dude" 
-              className="px-8 py-4 border border-zinc-200 hover:bg-zinc-50 text-zinc-900 font-bold text-sm rounded transition-all"
-            >
-              Become a Dude & Earn
-            </Link>
           </div>
           <div className="flex gap-12 sm:gap-20 mt-16 border-t border-zinc-100 pt-10 w-full justify-center text-zinc-800">
             <div className="flex flex-col">
@@ -136,105 +87,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Active Dudes Map & Feed */}
-      <section id="active-bounties" className="py-24 px-8 border-b border-zinc-100 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="font-heading font-black text-3xl text-black tracking-tight mb-3">Active Dude Operations</h2>
-          <p className="text-sm text-zinc-500">Your Local Dude, On The Ground. Real-time feed of verification missions across Bengaluru tech and student hubs.</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Map Column */}
-          <div className="lg:col-span-2 border border-zinc-100 rounded-lg p-6 bg-zinc-50/50 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-heading font-bold text-lg text-black">Live Tracker Map</h3>
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#cc5a37]">
-                <span className="w-2 h-2 rounded-full bg-[#cc5a37] animate-pulse"></span> LIVE DUDES
-              </span>
-            </div>
-            <div className="relative bg-zinc-950 rounded-lg overflow-hidden border border-zinc-900 aspect-video flex items-center justify-center p-2 select-none">
-              <svg viewBox="0 0 800 600" className="w-full h-full max-h-[400px]">
-                {/* SVG Routes */}
-                <path d="M 200 150 Q 300 200 400 180 T 650 250" fill="none" stroke="rgba(204, 90, 55, 0.15)" strokeWidth="2.5" strokeDasharray="6 3"/>
-                <path d="M 150 450 Q 350 400 450 350 T 600 480" fill="none" stroke="rgba(204, 90, 55, 0.15)" strokeWidth="2.5" strokeDasharray="6 3"/>
-                <path d="M 400 180 Q 420 300 450 350" fill="none" stroke="rgba(204, 90, 55, 0.15)" strokeWidth="2.5" strokeDasharray="6 3"/>
-                
-                {/* Interactive Area Markers */}
-                <g onClick={() => handleAreaSelect("Indiranagar")} className="cursor-pointer group">
-                  <circle cx="450" cy="200" r="45" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="450" cy="200" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="450" y="260" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">Indiranagar</text>
-                  <circle cx="435" cy="185" r="5" fill="#cc5a37" className="animate-ping"/>
-                  <circle cx="435" cy="185" r="5" fill="#cc5a37"/>
-                </g>
 
-                <g onClick={() => handleAreaSelect("Koramangala")} className="cursor-pointer group">
-                  <circle cx="420" cy="380" r="50" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="420" cy="380" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="420" y="445" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">Koramangala</text>
-                  <circle cx="435" cy="365" r="5" fill="#cc5a37" className="animate-ping"/>
-                  <circle cx="435" cy="365" r="5" fill="#cc5a37"/>
-                </g>
-
-                <g onClick={() => handleAreaSelect("HSR Layout")} className="cursor-pointer group">
-                  <circle cx="580" cy="450" r="45" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="580" cy="450" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="580" y="510" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">HSR Layout</text>
-                </g>
-
-                <g onClick={() => handleAreaSelect("Whitefield")} className="cursor-pointer group">
-                  <circle cx="700" cy="220" r="40" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="700" cy="220" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="700" y="280" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">Whitefield</text>
-                </g>
-
-                <g onClick={() => handleAreaSelect("Hebbal")} className="cursor-pointer group">
-                  <circle cx="250" cy="120" r="40" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="250" cy="120" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="250" y="180" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">Hebbal</text>
-                </g>
-
-                <g onClick={() => handleAreaSelect("Yeshwanthpur")} className="cursor-pointer group">
-                  <circle cx="160" cy="280" r="35" fill="rgba(204, 90, 55, 0.05)" className="group-hover:fill-primary/10 transition-colors"/>
-                  <circle cx="160" cy="280" r="10" fill="#cc5a37" stroke="#ffffff" strokeWidth="1.5"/>
-                  <text x="160" y="335" fill="#ffffff" fontSize="12" fontFamily="var(--font-bricolage-grotesque)" textAnchor="middle" fontWeight="bold">Yeshwanthpur</text>
-                </g>
-              </svg>
-              <div className="absolute bottom-4 left-4 bg-black/80 text-[10px] text-zinc-300 px-3 py-1.5 rounded border border-zinc-800">
-                💡 Click any region on the map to dispatch a Dude there!
-              </div>
-            </div>
-          </div>
-
-          {/* Feed Column */}
-          <div className="border border-zinc-100 rounded-lg p-6 bg-white flex flex-col h-full max-h-[500px]">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-heading font-bold text-lg text-black">Operations Feed</h3>
-              <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#cc5a37]/10 text-[#cc5a37]">{bounties.length} active</span>
-            </div>
-            <div className="flex flex-col gap-4 overflow-y-auto pr-1 flex-1">
-              {bounties.map((b) => (
-                <div 
-                  key={b.id} 
-                  onClick={() => router.push(`/seeker?id=${b.id}`)}
-                  className="p-4 border border-zinc-100 rounded-md hover:border-[#cc5a37]/40 hover:bg-zinc-50/50 transition-all cursor-pointer flex justify-between items-start gap-4"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 uppercase">
-                      <MapPin size={10} className="text-[#cc5a37]" /> {b.area}
-                    </span>
-                    <strong className="text-xs text-black">{b.roomType}</strong>
-                    <span className="text-[10px] text-zinc-400">Seeker: {b.seekerName} | Budget: ₹{b.budgetMin.toLocaleString()} - ₹{b.budgetMax.toLocaleString()}</span>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className="text-xs font-bold text-black">₹499 Bounty</span>
-                    {getStatusBadge(b.status)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 3. Features Bento Grid */}
       <section id="features" className="py-24 px-8 border-b border-zinc-100 max-w-7xl mx-auto w-full">
@@ -378,7 +231,7 @@ export default function Home() {
           <h2 className="font-heading font-black text-3xl text-black tracking-tight mb-3">How TAB Operates</h2>
           <p className="text-sm text-zinc-500">A transparent, escrow-protected ecosystem for seekers and dudes.</p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="max-w-3xl mx-auto w-full">
           <div className="border border-zinc-100 rounded-lg p-8 bg-zinc-50/20 relative">
             <span className="absolute top-6 right-8 text-xs font-bold text-[#cc5a37] uppercase select-none tracking-wider">For Seekers</span>
             <h3 className="font-heading font-extrabold text-xl text-black mb-6">Find Your PG Room</h3>
@@ -398,29 +251,6 @@ export default function Home() {
               <li className="flex gap-3">
                 <strong className="text-[#cc5a37] shrink-0 font-heading">04.</strong>
                 <span><strong>Release or Revise:</strong> Approve and routing releases ₹400. If details don't match, ask for revision.</span>
-              </li>
-            </ol>
-          </div>
-
-          <div className="border border-zinc-100 rounded-lg p-8 bg-zinc-50/20 relative">
-            <span className="absolute top-6 right-8 text-xs font-bold text-zinc-500 uppercase select-none tracking-wider">For Dudes</span>
-            <h3 className="font-heading font-extrabold text-xl text-black mb-6">Earn Ground Payouts</h3>
-            <ol className="flex flex-col gap-4 text-xs leading-relaxed text-zinc-600">
-              <li className="flex gap-3">
-                <strong className="text-zinc-500 shrink-0 font-heading">01.</strong>
-                <span><strong>Browse Tasks Board:</strong> See list of pending verification requests in your sector.</span>
-              </li>
-              <li className="flex gap-3">
-                <strong className="text-zinc-500 shrink-0 font-heading">02.</strong>
-                <span><strong>Accept & Visit:</strong> Accept a bounty and ride over to the exact PG coordinates.</span>
-              </li>
-              <li className="flex gap-3">
-                <strong className="text-zinc-500 shrink-0 font-heading">03.</strong>
-                <span><strong>Perform Room Audit:</strong> Capture speed tests, kitchen checks, and live room conditions.</span>
-              </li>
-              <li className="flex gap-3">
-                <strong className="text-zinc-500 shrink-0 font-heading">04.</strong>
-                <span><strong>Receive Bank Transits:</strong> Submit report data. Once approved, ₹400 transits directly to you.</span>
               </li>
             </ol>
           </div>

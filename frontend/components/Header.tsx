@@ -23,7 +23,6 @@ export default function Header() {
 
   const navItems = [
     { label: "How It Works", target: "how-it-works" },
-    { label: "Active Dudes Map", target: "active-bounties" },
     { label: "Why TAB", target: "features" },
   ];
 
@@ -64,13 +63,6 @@ export default function Header() {
         {/* Desktop Action Buttons */}
         <div className="hidden md:flex items-center gap-3">
           <Link 
-            href="/dude" 
-            className="px-5 py-2.5 text-xs font-bold border border-zinc-200 text-zinc-700 rounded-lg hover:border-[#cc5a37]/30 hover:bg-[#cc5a37]/5 hover:text-[#cc5a37] transition-all duration-300 flex items-center gap-1.5 group/btn"
-          >
-            Become a Dude
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse group-hover/btn:scale-110 transition-transform"></span>
-          </Link>
-          <Link 
             href="/seeker" 
             className="px-5 py-2.5 text-xs font-bold bg-[#cc5a37] hover:bg-[#b84b2c] text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg shadow-[#cc5a37]/15 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1 group/seeker"
           >
@@ -106,14 +98,6 @@ export default function Header() {
           </nav>
           
           <div className="flex flex-col gap-3 pt-2">
-            <Link 
-              href="/dude" 
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center px-4.5 py-3 text-xs font-bold border border-zinc-200 text-zinc-700 rounded-lg hover:border-[#cc5a37]/30 hover:bg-[#cc5a37]/5 hover:text-[#cc5a37] transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              Become a Dude
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            </Link>
             <Link 
               href="/seeker" 
               onClick={() => setMobileMenuOpen(false)}

@@ -9,7 +9,6 @@ export default function RoleSimulator() {
   const buttons = [
     { label: "Landing Page", path: "/", role: "visitor" },
     { label: "Seeker Dashboard", path: "/seeker", role: "seeker" },
-    { label: "Dude Dashboard", path: "/dude", role: "dude" },
     { label: "Admin Control", path: "/admin", role: "admin" },
   ];
 
